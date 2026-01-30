@@ -22,6 +22,20 @@
 			"when": 1769564558352,
 			"tag": "0002_remarkable_plazm",
 			"breakpoints": true
+		},
+		{
+			"idx": 3,
+			"version": "7",
+			"when": 1769777325705,
+			"tag": "0003_thankful_baron_strucker",
+			"breakpoints": true
+		},
+		{
+			"idx": 4,
+			"version": "7",
+			"when": 1769789336861,
+			"tag": "0004_fluffy_santa_claus",
+			"breakpoints": true
 		}
 	]
 }

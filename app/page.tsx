@@ -1,60 +1,90 @@
-import Link from "next/link";
+"use client";
 
-import { MePanel } from "@/components/me-panel";
-import { PushTestCard } from "@/components/push-test-card";
-import { SecureMessageForm } from "@/components/secure-message-form";
+import { useEffect, useState } from "react";
+import { BottomNav } from "@/components/bottom-nav";
+import { DailyGoalManager } from "@/components/daily-goal-manager";
+import { HomeHeader } from "@/components/home/home-header";
+import { StatsCard } from "@/components/home/stats-card";
+import { UserSection } from "@/components/home/user-section";
+import { apiClient } from "@/lib/api-client";
+
+// Types matching API response
+interface HomeData {
+	user: {
+		name: string;
+		image: string | null;
+		characterName: string | null;
+		level: number;
+		hasUnreadNotifications: boolean;
+	};
+	stats: {
+		currentStreak: number;
+		maxStreak: number;
+		todayExerciseMinutes: number;
+		maxExerciseMinutes: number;
+		graphData: {
+			label: string;
+			minutes: number;
+			type: string;
+		}[];
+	};
+	dailyQuote: {
+		text: string;
+	} | null;
+}
 
 export default function Home() {
+	const [data, setData] = useState<HomeData | null>(null);
+
+	useEffect(() => {
+		const fetchData = async () => {
+			const res = await apiClient.api.home.$get();
+			if (res.ok) {
+				const json = await res.json();
+				if ("error" in json) return;
+				setData(json as HomeData);
+			}
+		};
+		fetchData();
+	}, []);
+
+	if (!data) {
+		// Loading state
+		return <div className="min-h-screen bg-gray-50"></div>;
+	}
+
 	return (
-		<div className="space-y-10">
-			<section className="space-y-4">
-				<p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">
-					Hono RPC + Better Auth
-				</p>
-				<h1 className="text-3xl font-semibold text-zinc-900">
-					Secure API playground for Next.js
-				</h1>
-				<p className="max-w-2xl text-base text-zinc-600">
-					This demo uses Hono for typed APIs, Better Auth for email/password
-					authentication, and Drizzle ORM with PostgreSQL to persist sessions.
-				</p>
-				<div className="flex flex-wrap gap-3 text-sm">
-					<Link
-						href="/login"
-						className="rounded-full border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:border-zinc-300"
-					>
-						Go to login
-					</Link>
-					<Link
-						href="/signup"
-						className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
-					>
-						Create account
-					</Link>
-				</div>
-			</section>
+		<div className="min-h-screen bg-gray-50 pb-32 font-sans">
+			{/* Daily Goal Modal Manager */}
+			<DailyGoalManager />
 
-			<section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-				<div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-					<h2 className="text-lg font-semibold text-zinc-900">
-						Quick checklist
-					</h2>
-					<ol className="mt-3 space-y-2 text-sm text-zinc-600">
-						<li>1. Create an account on the signup page.</li>
-						<li>2. Log in to create a session cookie.</li>
-						<li>3. Call the secure API using the form below.</li>
-					</ol>
-					<p className="mt-4 text-xs text-zinc-400">
-						Your session is validated via Hono middleware + Better Auth.
-					</p>
-				</div>
-				<MePanel />
-			</section>
+			{/* Main Content */}
+			<div className="max-w-md mx-auto bg-gray-50 min-h-screen relative shadow-sm">
+				<HomeHeader hasUnreadNotifications={data.user.hasUnreadNotifications} />
 
-			<section className="grid gap-6 lg:grid-cols-2">
-				<SecureMessageForm />
-				<PushTestCard />
-			</section>
+				<main className="space-y-6">
+					<UserSection
+						name={data.user.name}
+						characterName={data.user.characterName}
+						imageUrl={data.user.image}
+					/>
+
+					<StatsCard
+						level={data.user.level}
+						currentStreak={data.stats.currentStreak}
+						maxStreak={data.stats.maxStreak}
+						todayMinutes={data.stats.todayExerciseMinutes}
+						maxMinutes={data.stats.maxExerciseMinutes}
+						graphData={data.stats.graphData}
+						quote={data.dailyQuote?.text ?? null}
+					/>
+
+					{/* Placeholder for other users/friends list if needed */}
+				</main>
+
+				{/* Bottom Navigation */}
+				<BottomNav />
+			</div>
 		</div>
 	);
 }
