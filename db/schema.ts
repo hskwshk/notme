@@ -16,6 +16,13 @@ export const user = pgTable("user", {
 	email: text("email").notNull().unique(),
 	emailVerified: boolean("email_verified").default(false).notNull(),
 	image: text("image"),
+	characterName: text("character_name"),
+	level: bigint("level", { mode: "number" }).default(1).notNull(),
+	currentStreak: bigint("current_streak", { mode: "number" })
+		.default(0)
+		.notNull(),
+	maxStreak: bigint("max_streak", { mode: "number" }).default(0).notNull(),
+	maxMinutes: bigint("max_minutes", { mode: "number" }).default(0).notNull(),
 	createdAt: timestamp("created_at").defaultNow().notNull(),
 	updatedAt: timestamp("updated_at")
 		.defaultNow()
@@ -120,10 +127,88 @@ export const pushSubscription = pgTable(
 	],
 );
 
+export const dailyGoal = pgTable("daily_goal", {
+	id: text("id").primaryKey().notNull(),
+	title: text("title").notNull(),
+	imageUrl: text("image_url"),
+	description: text("description"),
+	footer: text("footer"),
+	createdAt: timestamp("created_at").defaultNow().notNull(),
+	updatedAt: timestamp("updated_at")
+		.defaultNow()
+		.$onUpdate(() => /* @__PURE__ */ new Date())
+		.notNull(),
+});
+
+export const userDailyGoal = pgTable(
+	"user_daily_goal",
+	{
+		id: text("id").primaryKey().notNull(),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		goalId: text("goal_id")
+			.notNull()
+			.references(() => dailyGoal.id, { onDelete: "cascade" }),
+		date: text("date").notNull(), // YYYY-MM-DD
+		isViewed: boolean("is_viewed").default(false).notNull(),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.defaultNow()
+			.$onUpdate(() => /* @__PURE__ */ new Date())
+			.notNull(),
+	},
+	(table) => [
+		index("user_daily_goal_userId_idx").on(table.userId),
+		uniqueIndex("user_daily_goal_userId_date_idx").on(table.userId, table.date),
+	],
+);
+
+export const activityLog = pgTable(
+	"activity_log",
+	{
+		id: text("id").primaryKey().notNull(),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		date: text("date").notNull(), // YYYY-MM-DD
+		durationMinutes: bigint("duration_minutes", { mode: "number" }).notNull(),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+	},
+	(table) => [
+		index("activity_log_userId_idx").on(table.userId),
+		index("activity_log_date_idx").on(table.date),
+	],
+);
+
+export const appNotification = pgTable(
+	"app_notification",
+	{
+		id: text("id").primaryKey().notNull(),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		title: text("title").notNull(),
+		isRead: boolean("is_read").default(false).notNull(),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+	},
+	(table) => [index("app_notification_userId_idx").on(table.userId)],
+);
+
+export const dailyQuote = pgTable("daily_quote", {
+	id: text("id").primaryKey().notNull(),
+	content: text("content").notNull(),
+	author: text("author"),
+	createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const userRelations = relations(user, ({ many }) => ({
 	sessions: many(session),
 	accounts: many(account),
 	pushSubscriptions: many(pushSubscription),
+	dailyGoals: many(userDailyGoal),
+	activityLogs: many(activityLog),
+	notifications: many(appNotification),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -145,6 +230,34 @@ export const pushSubscriptionRelations = relations(
 	({ one }) => ({
 		user: one(user, {
 			fields: [pushSubscription.userId],
+			references: [user.id],
+		}),
+	}),
+);
+
+export const userDailyGoalRelations = relations(userDailyGoal, ({ one }) => ({
+	user: one(user, {
+		fields: [userDailyGoal.userId],
+		references: [user.id],
+	}),
+	goal: one(dailyGoal, {
+		fields: [userDailyGoal.goalId],
+		references: [dailyGoal.id],
+	}),
+}));
+
+export const activityLogRelations = relations(activityLog, ({ one }) => ({
+	user: one(user, {
+		fields: [activityLog.userId],
+		references: [user.id],
+	}),
+}));
+
+export const appNotificationRelations = relations(
+	appNotification,
+	({ one }) => ({
+		user: one(user, {
+			fields: [appNotification.userId],
 			references: [user.id],
 		}),
 	}),
