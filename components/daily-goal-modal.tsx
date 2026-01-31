@@ -3,6 +3,7 @@
 import { X } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 interface DailyGoal {
 	id: string;
@@ -32,9 +33,9 @@ export function DailyGoalModal({ goal, onClose }: DailyGoalModalProps) {
 		setTimeout(onClose, 300); // Wait for animation
 	};
 
-	return (
+	return createPortal(
 		<div
-			className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-300 ${
+			className={`fixed inset-0 z-[100] flex items-center justify-center p-4 transition-all duration-300 ${
 				isVisible
 					? "bg-black/50 backdrop-blur-sm"
 					: "bg-black/0 backdrop-blur-none pointer-events-none"
@@ -69,11 +70,13 @@ export function DailyGoalModal({ goal, onClose }: DailyGoalModalProps) {
 					<div className="relative mb-8 w-48 h-48 flex items-center justify-center">
 						{!imageError && goal.imageUrl ? (
 							<div className="w-full h-full relative">
-								<img
+								<Image
 									src={goal.imageUrl}
 									alt={goal.title}
-									className="object-contain w-full h-full"
+									fill
+									className="object-contain"
 									onError={() => setImageError(true)}
+									unoptimized // Allow external images without config
 								/>
 							</div>
 						) : (
@@ -91,6 +94,7 @@ export function DailyGoalModal({ goal, onClose }: DailyGoalModalProps) {
 
 				{/* Decorative stamp effect could go here */}
 			</div>
-		</div>
+		</div>,
+		document.body,
 	);
 }
