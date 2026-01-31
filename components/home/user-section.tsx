@@ -1,6 +1,7 @@
 "use client";
 
 import { MoreHorizontal } from "lucide-react";
+import Image from "next/image";
 
 interface UserSectionProps {
 	name: string;
@@ -19,11 +20,7 @@ export function UserSection({
 				{/* Avatar Placeholder */}
 				<div className="h-12 w-12 rounded-full bg-gray-300 overflow-hidden">
 					{imageUrl && (
-						<img
-							src={imageUrl}
-							alt={name}
-							className="h-full w-full object-cover"
-						/>
+						<Image src={imageUrl} alt={name} fill className="object-cover" />
 					)}
 				</div>
 				<div>

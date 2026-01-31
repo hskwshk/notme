@@ -43,6 +43,10 @@ export default function Home() {
 				const json = await res.json();
 				if ("error" in json) return;
 				setData(json as HomeData);
+			} else if (res.status === 401) {
+				// If unauthorized (e.g. invalid session after DB reset), redirect to login
+				// In a real app we might use router.push, but window.location ensures full reload/clean slate
+				window.location.href = "/login";
 			}
 		};
 		fetchData();
