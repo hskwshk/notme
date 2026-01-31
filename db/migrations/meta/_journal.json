@@ -50,6 +50,13 @@
 			"when": 1769876463164,
 			"tag": "0006_perpetual_vermin",
 			"breakpoints": true
+		},
+		{
+			"idx": 7,
+			"version": "7",
+			"when": 1769877970893,
+			"tag": "0007_strong_blackheart",
+			"breakpoints": true
 		}
 	]
 }
