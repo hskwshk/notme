@@ -41,7 +41,8 @@ export function BottomNav() {
 						);
 					}
 
-					const Icon = item.icon!;
+					if (!item.icon) return null;
+					const Icon = item.icon;
 
 					return (
 						<Link

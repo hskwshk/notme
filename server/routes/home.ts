@@ -48,8 +48,8 @@ const homeRoute = new Hono<HonoEnv>().get("/", async (c) => {
 	});
 
 	// 4. Graph Data
-	// - "Max/Month": Simplified to just picking the highest duration in last 30 days
-	// - "3 days ago", "Yesterday", "Today"
+	// - "Max/Month": The single highest duration in the last 30 days (for Y-axis scaling)
+	// - Last 5 days daily data (for the graph itself)
 
 	// Fetch last 30 days logs
 	const thirtyDaysAgo = new Date();
@@ -66,37 +66,47 @@ const homeRoute = new Hono<HonoEnv>().get("/", async (c) => {
 			),
 		);
 
-	// Find max in month
-	const maxInMonth = recentLogs.reduce(
+	// Find max in month for Y-axis scaling
+	const monthMaxMinutes = recentLogs.reduce(
 		(max, log) => (log.durationMinutes > max ? log.durationMinutes : max),
 		0,
 	);
 
-	// Map specific days for graph
-	const getMinutesForDate = (targetDateStr: string) =>
-		recentLogs.find((l) => l.date === targetDateStr)?.durationMinutes || 0;
+	// Generate last 5 days data
+	const graphDataRaw = [];
+	for (let i = 4; i >= 0; i--) {
+		const d = new Date();
+		d.setDate(d.getDate() - i);
+		const dateStr = d.toISOString().split("T")[0];
+		// If i == 0 it's today, i == 1 it's yesterday, etc.
+		// Label logic can be simple (or based on design requirements).
+		// For now let's use "Today" for 0, "Yesterday" for 1, and formatted date or simple "N日前" for others.
+		// Current requirement didn't specify exact labels for 2-4 days ago, so let's stick to simple relative or date.
+		// Actually the previous code used "3日前", "昨日", "今日". Let's use "N日前" for > 1.
+		let label = "";
+		if (i === 0) label = "今日";
+		else if (i === 1) label = "昨日";
+		else label = `${i}日前`;
 
-	const yesterday = new Date();
-	yesterday.setDate(yesterday.getDate() - 1);
-	const threeDaysAgo = new Date();
-	threeDaysAgo.setDate(threeDaysAgo.getDate() - 3); // Based on "3 days ago" label, implies today-3? Or just a random past point?
-	// The image says "Left to right: Max/Month, ..., Today".
-	// Let's stick to the plan: Max/Month, 3 days ago, Yesterday, Today.
+		const log = recentLogs.find((l) => l.date === dateStr);
+		graphDataRaw.push({
+			date: dateStr,
+			label,
+			minutes: log?.durationMinutes || 0,
+			// type: "daily" // We can remove 'type' if it's all daily now, or keep it.
+		});
+	}
 
-	const graphData = [
-		{ label: "最大/月", minutes: maxInMonth, type: "max" },
-		{
-			label: "3日前",
-			minutes: getMinutesForDate(threeDaysAgo.toISOString().split("T")[0]),
-			type: "daily",
-		},
-		{
-			label: "昨日",
-			minutes: getMinutesForDate(yesterday.toISOString().split("T")[0]),
-			type: "daily",
-		},
-		{ label: "今日", minutes: getMinutesForDate(today), type: "daily" },
-	];
+	// Find the max minutes within these 5 days to highlight
+	// If all are 0, maybe no highlight? or just highlight one? Let's highlight the first max found.
+	const maxIn5Days = Math.max(...graphDataRaw.map((g) => g.minutes));
+
+	const graphData = graphDataRaw.map((g) => ({
+		label: g.label,
+		minutes: g.minutes,
+		type: "daily",
+		isMostEffort: maxIn5Days > 0 && g.minutes === maxIn5Days,
+	}));
 
 	// 5. Daily Quote
 	// Just pick one randomly or the latest
@@ -114,7 +124,10 @@ const homeRoute = new Hono<HonoEnv>().get("/", async (c) => {
 			currentStreak: userData.currentStreak,
 			maxStreak: userData.maxStreak,
 			todayExerciseMinutes: todayLog?.durationMinutes || 0,
-			maxExerciseMinutes: userData.maxMinutes,
+			maxExerciseMinutes: userData.maxMinutes, // Keeping this as user lifetime max? Or replace?
+			// User asked for "Vertical axis max is max in past month".
+			// So let's provide monthMaxMinutes.
+			monthMaxMinutes: monthMaxMinutes,
 			graphData,
 		},
 		dailyQuote: quote ? { text: quote.content } : null,

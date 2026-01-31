@@ -1,12 +1,8 @@
 import { HTTPException } from "hono/http-exception";
 
-class InternalServerError extends HTTPException {
-	constructor(message: string, cause?: unknown) {
-		super(500, { message, cause });
-		this.name = "ServiceError";
-	}
-}
-
+/**
+ * Validation error class extending HTTPException.
+ */
 export class ValidationError extends HTTPException {
 	constructor(message: string, cause?: unknown) {
 		super(400, { message, cause });

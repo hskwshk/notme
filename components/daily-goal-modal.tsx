@@ -69,11 +69,13 @@ export function DailyGoalModal({ goal, onClose }: DailyGoalModalProps) {
 					<div className="relative mb-8 w-48 h-48 flex items-center justify-center">
 						{!imageError && goal.imageUrl ? (
 							<div className="w-full h-full relative">
-								<img
+								<Image
 									src={goal.imageUrl}
 									alt={goal.title}
-									className="object-contain w-full h-full"
+									className="object-contain"
+									fill
 									onError={() => setImageError(true)}
+									sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
 								/>
 							</div>
 						) : (
