@@ -4,6 +4,7 @@ import calendarRoute from "@/server/routes/calendar";
 import dailyGoalRoute from "@/server/routes/daily-goal";
 import homeRoute from "@/server/routes/home";
 import notificationsRoute from "@/server/routes/notifications";
+import userRoute from "@/server/routes/user";
 
 const app = createHonoApp()
 	.basePath("/api")
@@ -11,7 +12,8 @@ const app = createHonoApp()
 	.route("/notifications", notificationsRoute)
 	.route("/daily-goal", dailyGoalRoute)
 	.route("/home", homeRoute)
-	.route("/calendar", calendarRoute);
+	.route("/calendar", calendarRoute)
+	.route("/users", userRoute);
 
 export type AppType = typeof app;
 export { app };
