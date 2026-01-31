@@ -42,8 +42,10 @@ export async function setup() {
 		await truncate();
 	});
 
-	async function createUser() {
-		const user: typeof auth.$Infer.Session.user = {
+	async function createUser(
+		overrides?: Partial<typeof schema.user.$inferInsert>,
+	) {
+		const user: typeof schema.user.$inferInsert = {
 			id: "test_user_id",
 			name: "Test User",
 			email: "test@example.com",
@@ -51,11 +53,12 @@ export async function setup() {
 			createdAt: new Date("2026-01-01"),
 			updatedAt: new Date("2026-01-01"),
 			emailVerified: true,
+			...overrides,
 		};
 
 		const session: typeof auth.$Infer.Session.session = {
 			id: "test_session_id",
-			userId: user.id,
+			userId: user.id!,
 			expiresAt: new Date(new Date("2026-01-01").getTime() + 1000 * 60 * 60),
 			token: "test_token",
 			createdAt: new Date("2026-01-01"),
