@@ -1,6 +1,13 @@
 import { uuidv7 } from "uuidv7";
 import { z } from "zod";
 
+import { ValidationError } from "@/server/errors";
+
+const buildFromZod = <Output>(result: z.ZodSafeParseResult<Output>): Output => {
+	if (result.success) return result.data;
+	throw new ValidationError(result.error.message);
+};
+
 export const createBlobFile = (params: {
 	blob: Blob;
 	bucket: string;
@@ -26,6 +33,15 @@ const generateFileId = (): FileId => {
 export const fileIdSchema = z.string().uuid().brand("FileId");
 
 export type FileId = z.infer<typeof fileIdSchema>;
+type FileIdInput = z.input<typeof fileIdSchema>;
+
+export const FileId = Object.assign(
+	(input: FileIdInput): FileId => buildFromZod(fileIdSchema.safeParse(input)),
+	{
+		schema: fileIdSchema,
+		unsafe: (input: FileIdInput): FileId => fileIdSchema.parse(input),
+	},
+);
 
 export interface BlobFile extends BaseFile {
 	kind: "BlobFile";

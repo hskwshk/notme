@@ -1,3 +1,4 @@
+/** @knipignore */
 import { and, count, eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { v4 as uuidv4 } from "uuid";

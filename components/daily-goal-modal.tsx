@@ -76,6 +76,7 @@ export function DailyGoalModal({ goal, onClose }: DailyGoalModalProps) {
 									fill
 									className="object-contain"
 									onError={() => setImageError(true)}
+									sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
 									unoptimized // Allow external images without config
 								/>
 							</div>
