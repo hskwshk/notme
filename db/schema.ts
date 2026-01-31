@@ -176,6 +176,7 @@ export const activityLog = pgTable(
 			.references(() => user.id, { onDelete: "cascade" }),
 		date: text("date").notNull(), // YYYY-MM-DD
 		durationMinutes: bigint("duration_minutes", { mode: "number" }).notNull(),
+		isStampViewed: boolean("is_stamp_viewed").default(false).notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 	},
 	(table) => [
