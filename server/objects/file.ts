@@ -1,6 +1,12 @@
 import { uuidv7 } from "uuidv7";
 import { z } from "zod";
+
 import { ValidationError } from "@/server/errors";
+
+const buildFromZod = <Output>(result: z.ZodSafeParseResult<Output>): Output => {
+	if (result.success) return result.data;
+	throw new ValidationError(result.error.message);
+};
 
 export const createBlobFile = (params: {
 	blob: Blob;
@@ -24,7 +30,7 @@ const generateFileId = (): FileId => {
 	return uuidv7() as FileId;
 };
 
-const fileIdSchema = z.string().uuid().brand("FileId");
+export const fileIdSchema = z.string().uuid().brand("FileId");
 
 export type FileId = z.infer<typeof fileIdSchema>;
 type FileIdInput = z.input<typeof fileIdSchema>;
@@ -48,21 +54,6 @@ export interface BaseFile {
 	key: string;
 	contentType: string;
 }
-
-/**
- * Zod の SafeParseReturnType を neverthrow の Result に変換する
- *
- * @example
- * ```ts
- * const result = buildFromZod(OrderQuantity.safeBuild(newValue));
- * // Result<OrderQuantity, ValidationError>
- * ```
- */
-
-const buildFromZod = <Output>(result: z.ZodSafeParseResult<Output>): Output => {
-	if (result.success) return result.data;
-	throw new ValidationError(result.error.message);
-};
 
 export type UploadedFile<T extends BaseFile> = T & {
 	size: number;

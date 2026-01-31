@@ -41,7 +41,6 @@ export function BottomNav() {
 						);
 					}
 
-					if (!item.icon) return null;
 					const Icon = item.icon;
 
 					return (
@@ -52,11 +51,13 @@ export function BottomNav() {
 								isActive ? "text-white" : "text-gray-400"
 							}`}
 						>
-							<Icon
-								className={`${isActive ? "h-7 w-7" : "h-7 w-7"}`}
-								// Fill home icon if active? The image shows outline mostly but bold.
-								strokeWidth={2}
-							/>
+							{Icon && (
+								<Icon
+									className={`${isActive ? "h-7 w-7" : "h-7 w-7"}`}
+									// Fill home icon if active? The image shows outline mostly but bold.
+									strokeWidth={2}
+								/>
+							)}
 							<span
 								className={`text-[10px] font-medium ${isActive ? "text-white" : "text-white"}`}
 							>
