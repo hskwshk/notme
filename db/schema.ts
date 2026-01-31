@@ -23,6 +23,9 @@ export const user = pgTable("user", {
 		.notNull(),
 	maxStreak: bigint("max_streak", { mode: "number" }).default(0).notNull(),
 	maxMinutes: bigint("max_minutes", { mode: "number" }).default(0).notNull(),
+	totalDuration: bigint("total_duration", { mode: "number" })
+		.default(0)
+		.notNull(),
 	createdAt: timestamp("created_at").defaultNow().notNull(),
 	updatedAt: timestamp("updated_at")
 		.defaultNow()
@@ -202,14 +205,7 @@ export const dailyQuote = pgTable("daily_quote", {
 	createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const userRelations = relations(user, ({ many }) => ({
-	sessions: many(session),
-	accounts: many(account),
-	pushSubscriptions: many(pushSubscription),
-	dailyGoals: many(userDailyGoal),
-	activityLogs: many(activityLog),
-	notifications: many(appNotification),
-}));
+// Existing relations removed to avoid duplication - moved to userGamificationRelations
 
 export const sessionRelations = relations(session, ({ one }) => ({
 	user: one(user, {
@@ -262,3 +258,84 @@ export const appNotificationRelations = relations(
 		}),
 	}),
 );
+
+export const stamp = pgTable("stamp", {
+	id: text("id").primaryKey().notNull(),
+	name: text("name").notNull(),
+	imageUrl: text("image_url").notNull(),
+	createdAt: timestamp("created_at").defaultNow().notNull(),
+	updatedAt: timestamp("updated_at")
+		.defaultNow()
+		.$onUpdate(() => /* @__PURE__ */ new Date())
+		.notNull(),
+});
+
+export const userStamp = pgTable(
+	"user_stamp",
+	{
+		id: text("id").primaryKey().notNull(),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		stampId: text("stamp_id")
+			.notNull()
+			.references(() => stamp.id, { onDelete: "cascade" }),
+		obtainedAt: timestamp("obtained_at").defaultNow().notNull(),
+	},
+	(table) => [
+		index("user_stamp_userId_idx").on(table.userId),
+		uniqueIndex("user_stamp_userId_stampId_idx").on(
+			table.userId,
+			table.stampId,
+		),
+	],
+);
+
+export const missionNotification = pgTable(
+	"mission_notification",
+	{
+		id: text("id").primaryKey().notNull(),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		missionType: text("mission_type").notNull(), // e.g. "stretch", "squat"
+		notifiedAt: timestamp("notified_at").defaultNow().notNull(),
+		isCompleted: boolean("is_completed").default(false).notNull(),
+		completedAt: timestamp("completed_at"),
+		expiresAt: timestamp("expires_at").notNull(), // 5 mins after notification
+	},
+	(table) => [index("mission_notification_userId_idx").on(table.userId)],
+);
+
+export const userStampRelations = relations(userStamp, ({ one }) => ({
+	user: one(user, {
+		fields: [userStamp.userId],
+		references: [user.id],
+	}),
+	stamp: one(stamp, {
+		fields: [userStamp.stampId],
+		references: [stamp.id],
+	}),
+}));
+
+export const missionNotificationRelations = relations(
+	missionNotification,
+	({ one }) => ({
+		user: one(user, {
+			fields: [missionNotification.userId],
+			references: [user.id],
+		}),
+	}),
+);
+
+export const userGamificationRelations = relations(user, ({ many }) => ({
+	userStamps: many(userStamp),
+	missionNotifications: many(missionNotification),
+	// Extend existing relations
+	sessions: many(session),
+	accounts: many(account),
+	pushSubscriptions: many(pushSubscription),
+	dailyGoals: many(userDailyGoal),
+	activityLogs: many(activityLog),
+	notifications: many(appNotification),
+}));

@@ -16,7 +16,7 @@ type MeData = {
 };
 
 export function MePanel() {
-	const { data: session } = authClient.useSession();
+	authClient.useSession();
 	const [data, setData] = useState<MeData | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
