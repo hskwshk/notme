@@ -281,6 +281,8 @@ export const userStamp = pgTable(
 		stampId: text("stamp_id")
 			.notNull()
 			.references(() => stamp.id, { onDelete: "cascade" }),
+		isFavorite: boolean("is_favorite").default(false).notNull(),
+		favoriteOrder: bigint("favorite_order", { mode: "number" }),
 		obtainedAt: timestamp("obtained_at").defaultNow().notNull(),
 	},
 	(table) => [
