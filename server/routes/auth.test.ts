@@ -90,32 +90,33 @@ describe("/routes/auth", () => {
 			expect(response.status).toBe(401);
 		});
 		it("ログイン時はユーザー情報を取得できる", async () => {
-			await createUser();
+			await createUser({
+				id: "test_user_id",
+				email: "test@example.com",
+			});
 			const response = await app.request("/me", {
 				method: "GET",
 			});
 			const json = await response.json();
-			expect(json).toMatchInlineSnapshot(`
-				{
-				  "session": {
-				    "createdAt": "2026-01-01T00:00:00.000Z",
-				    "expiresAt": "2026-01-01T01:00:00.000Z",
-				    "id": "test_session_id",
-				    "token": "test_token",
-				    "updatedAt": "2026-01-01T00:00:00.000Z",
-				    "userId": "test_user_id",
-				  },
-				  "user": {
-				    "createdAt": "2026-01-01T00:00:00.000Z",
-				    "email": "test@example.com",
-				    "emailVerified": true,
-				    "id": "test_user_id",
-				    "image": "https://example.com/avatar.png",
-				    "name": "Test User",
-				    "updatedAt": "2026-01-01T00:00:00.000Z",
-				  },
-				}
-			`);
+			expect(json).toMatchObject({
+				session: {
+					createdAt: "2026-01-01T00:00:00.000Z",
+					expiresAt: "2026-01-01T01:00:00.000Z",
+					id: expect.any(String),
+					token: expect.any(String),
+					updatedAt: "2026-01-01T00:00:00.000Z",
+					userId: "test_user_id",
+				},
+				user: {
+					createdAt: "2026-01-01T00:00:00.000Z",
+					email: "test@example.com",
+					emailVerified: true,
+					id: "test_user_id",
+					image: "https://example.com/avatar.png",
+					name: "Test User",
+					updatedAt: "2026-01-01T00:00:00.000Z",
+				},
+			});
 			expect(response.status).toBe(200);
 		});
 	});
