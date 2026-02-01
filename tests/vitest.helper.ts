@@ -42,22 +42,26 @@ export async function setup() {
 		await truncate();
 	});
 
-	async function createUser() {
-		const user: typeof auth.$Infer.Session.user = {
-			id: "test_user_id",
+	async function createUser(
+		overrides?: Partial<typeof schema.user.$inferInsert>,
+	) {
+		const user: typeof schema.user.$inferInsert = {
+			id: overrides?.id || crypto.randomUUID(),
 			name: "Test User",
-			email: "test@example.com",
+			email: overrides?.email || `test-${crypto.randomUUID()}@example.com`,
 			image: "https://example.com/avatar.png",
 			createdAt: new Date("2026-01-01"),
 			updatedAt: new Date("2026-01-01"),
 			emailVerified: true,
+			...overrides,
 		};
 
 		const session: typeof auth.$Infer.Session.session = {
-			id: "test_session_id",
-			userId: user.id,
+			id: crypto.randomUUID(),
+			// biome-ignore lint/style/noNonNullAssertion: id is guaranteed by default or override
+			userId: user.id!,
 			expiresAt: new Date(new Date("2026-01-01").getTime() + 1000 * 60 * 60),
-			token: "test_token",
+			token: `test_token_${crypto.randomUUID()}`,
 			createdAt: new Date("2026-01-01"),
 			updatedAt: new Date("2026-01-01"),
 		};

@@ -20,7 +20,15 @@ export function UserSection({
 				{/* Avatar Placeholder */}
 				<div className="h-12 w-12 rounded-full bg-gray-300 overflow-hidden">
 					{imageUrl && (
-						<Image src={imageUrl} alt={name} fill className="object-cover" />
+						<div className="relative h-full w-full">
+							<Image
+								src={imageUrl}
+								alt={name}
+								className="object-cover"
+								fill
+								sizes="48px"
+							/>
+						</div>
 					)}
 				</div>
 				<div>
