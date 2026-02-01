@@ -339,4 +339,32 @@ export const userGamificationRelations = relations(user, ({ many }) => ({
 	dailyGoals: many(userDailyGoal),
 	activityLogs: many(activityLog),
 	notifications: many(appNotification),
+	exerciseSessions: many(exerciseSession),
 }));
+
+export const exerciseSession = pgTable(
+	"exercise_session",
+	{
+		id: text("id").primaryKey().notNull(),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		startTime: timestamp("start_time").notNull(),
+		durationSeconds: bigint("duration_seconds", { mode: "number" }).notNull(),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+	},
+	(table) => [
+		index("exercise_session_userId_idx").on(table.userId),
+		index("exercise_session_startTime_idx").on(table.startTime),
+	],
+);
+
+export const exerciseSessionRelations = relations(
+	exerciseSession,
+	({ one }) => ({
+		user: one(user, {
+			fields: [exerciseSession.userId],
+			references: [user.id],
+		}),
+	}),
+);
