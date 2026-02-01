@@ -12,7 +12,10 @@ import type { HonoEnv } from "@/server/types";
 
 // Helper to calculate required missions for next level
 const getRequiredMissions = (level: number) => {
-	return level * 5;
+	if (level < 50) {
+		return 3 + Math.floor(level / 5);
+	}
+	return 13 + Math.floor((level - 50) / 10);
 };
 
 const calendarRoute = new Hono<HonoEnv>()

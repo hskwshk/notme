@@ -2,6 +2,7 @@ import { and, eq, gte } from "drizzle-orm";
 import { Hono } from "hono";
 import { v4 as uuidv4 } from "uuid";
 import { activityLog, appNotification, user as userTable } from "@/db/schema";
+import { calculateCurrentStreak } from "@/server/services/streak";
 import type { HonoEnv } from "@/server/types";
 
 const homeRoute = new Hono<HonoEnv>().get("/", async (c) => {
@@ -66,8 +67,44 @@ const homeRoute = new Hono<HonoEnv>().get("/", async (c) => {
 			createdAt: new Date(),
 		};
 	}
+	// 4. Streak Calculation
+	// Even if we just created a log, let's recalculate based on history to be safe and robust.
+	// We fetch ALL dates logic or just recent? simple streak won't exceed years usually, but fetching all date strings is cheap enough for MVP.
+	// Optimally: Fetch last 365 days of dates only.
+	const oneYearAgo = new Date();
+	oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+	const oneYearAgoStr = oneYearAgo.toISOString().split("T")[0];
 
-	// 4. Graph Data
+	const logsForStreak = await db
+		.select({ date: activityLog.date })
+		.from(activityLog)
+		.where(
+			and(
+				eq(activityLog.userId, user.id),
+				gte(activityLog.date, oneYearAgoStr),
+			),
+		);
+
+	const distinctDates = Array.from(new Set(logsForStreak.map((l) => l.date)));
+	const newStreak = calculateCurrentStreak(distinctDates);
+
+	// Update User if streak changed or max streak improved
+	if (newStreak !== userData.currentStreak || newStreak > userData.maxStreak) {
+		await db
+			.update(userTable)
+			.set({
+				currentStreak: newStreak,
+				maxStreak: Math.max(newStreak, userData.maxStreak),
+			})
+			.where(eq(userTable.id, user.id));
+
+		// Update local userData for response
+		userData.currentStreak = newStreak;
+		userData.maxStreak = Math.max(newStreak, userData.maxStreak);
+	}
+
+	// 5. Graph Data
+	// 5. Graph Data
 	// - "Max/Month": Simplified to just picking the highest duration in last 30 days
 	// - "3 days ago", "Yesterday", "Today"
 
@@ -118,7 +155,7 @@ const homeRoute = new Hono<HonoEnv>().get("/", async (c) => {
 		{ label: "今日", minutes: getMinutesForDate(today), type: "daily" },
 	];
 
-	// 5. Daily Quote
+	// 6. Daily Quote
 	// Just pick one randomly or the latest
 	const quote = await db.query.dailyQuote.findFirst();
 
