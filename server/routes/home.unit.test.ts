@@ -49,6 +49,8 @@ describe("GET / (Unit)", () => {
 				{ date: "2026-01-06", durationMinutes: 10 }, // 4 days ago
 				{ date: "2025-12-15", durationMinutes: 100 }, // Old log (Month max)
 			]),
+			update: vi.fn().mockReturnThis(),
+			set: vi.fn().mockReturnThis(),
 		};
 
 		const app = new Hono<HonoEnv>()

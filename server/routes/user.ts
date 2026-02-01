@@ -1,39 +1,191 @@
 import { zValidator } from "@hono/zod-validator";
-import { eq, like, or } from "drizzle-orm";
+import { and, eq, like, or } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { HonoEnv } from "@/server/types";
-import { user } from "../../db/schema";
+import { friendship, user as userTable } from "../../db/schema";
 
-const app = new Hono<HonoEnv>().get(
-	"/search",
-	zValidator(
-		"query",
-		z.object({
-			q: z.string().optional(),
-		}),
-	),
-	async (c) => {
+const app = new Hono<HonoEnv>()
+	.get(
+		"/search",
+		zValidator(
+			"query",
+			z.object({
+				q: z.string().optional(),
+			}),
+		),
+		async (c) => {
+			const db = c.get("db");
+			const { q } = c.req.valid("query");
+
+			if (!q) {
+				return c.json({ users: [] });
+			}
+
+			const users = await db
+				.select({
+					id: userTable.id,
+					name: userTable.name,
+					image: userTable.image,
+					currentStreak: userTable.currentStreak,
+				})
+				.from(userTable)
+				.where(or(like(userTable.name, `%${q}%`), eq(userTable.id, q)))
+				.limit(20);
+
+			return c.json({ users });
+		},
+	)
+	.post("/:id/friend-request", async (c) => {
 		const db = c.get("db");
-		const { q } = c.req.valid("query");
+		const user = c.get("user");
+		const friendId = c.req.param("id");
 
-		if (!q) {
-			return c.json({ users: [] });
+		if (!user) {
+			return c.json({ error: "Unauthorized" }, 401);
 		}
 
-		const users = await db
-			.select({
-				id: user.id,
-				name: user.name,
-				image: user.image,
-				currentStreak: user.currentStreak,
-			})
-			.from(user)
-			.where(or(like(user.name, `%${q}%`), eq(user.id, q)))
-			.limit(20);
+		if (user.id === friendId) {
+			return c.json({ error: "Cannot send friend request to yourself" }, 400);
+		}
 
-		return c.json({ users });
-	},
-);
+		// Check if friend exists
+		const friendExists = await db.query.user.findFirst({
+			where: eq(userTable.id, friendId),
+		});
+
+		if (!friendExists) {
+			return c.json({ error: "User not found" }, 404);
+		}
+
+		// Check existing friendship
+		const existingFriendship = await db.query.friendship.findFirst({
+			where: or(
+				and(eq(friendship.userId, user.id), eq(friendship.friendId, friendId)),
+				and(eq(friendship.userId, friendId), eq(friendship.friendId, user.id)),
+			),
+		});
+
+		if (existingFriendship) {
+			return c.json(
+				{
+					error: "Friendship already exists or pending",
+					status: existingFriendship.status,
+				},
+				400,
+			);
+		}
+
+		// Create Friend Request
+		await db.insert(friendship).values({
+			id: crypto.randomUUID(),
+			userId: user.id,
+			friendId: friendId,
+			status: "pending",
+		});
+
+		return c.json({ success: true, status: "pending" });
+	});
+
+app.get("/me/friend-requests", async (c) => {
+	const db = c.get("db");
+	const user = c.get("user");
+
+	if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+	const requests = await db.query.friendship.findMany({
+		where: and(
+			eq(friendship.friendId, user.id),
+			eq(friendship.status, "pending"),
+		),
+		with: {
+			user: true, // The sender
+		},
+	});
+
+	return c.json({ requests });
+});
+
+app.post("/friend-request/:requestId/accept", async (c) => {
+	const db = c.get("db");
+	const user = c.get("user");
+	const requestId = c.req.param("requestId");
+
+	if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+	// Verify request exists and is for me
+	const request = await db.query.friendship.findFirst({
+		where: and(
+			eq(friendship.id, requestId),
+			eq(friendship.friendId, user.id),
+			eq(friendship.status, "pending"),
+		),
+	});
+
+	if (!request) {
+		return c.json({ error: "Friend request not found" }, 404);
+	}
+
+	// Accept
+	await db
+		.update(friendship)
+		.set({ status: "accepted" })
+		.where(eq(friendship.id, requestId));
+
+	return c.json({ success: true });
+});
+
+app.delete("/friend-request/:requestId", async (c) => {
+	const db = c.get("db");
+	const user = c.get("user");
+	const requestId = c.req.param("requestId");
+
+	if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+	// Verify request exists and involves me
+	const request = await db.query.friendship.findFirst({
+		where: eq(friendship.id, requestId),
+	});
+
+	if (!request) {
+		return c.json({ error: "Friend request not found" }, 404);
+	}
+
+	if (request.userId !== user.id && request.friendId !== user.id) {
+		return c.json({ error: "Unauthorized" }, 403);
+	}
+
+	// Delete
+	await db.delete(friendship).where(eq(friendship.id, requestId));
+
+	return c.json({ success: true });
+});
+
+app.get("/me/friends", async (c) => {
+	const db = c.get("db");
+	const user = c.get("user");
+
+	if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+	const friendsRecords = await db.query.friendship.findMany({
+		where: and(
+			or(eq(friendship.userId, user.id), eq(friendship.friendId, user.id)),
+			eq(friendship.status, "accepted"),
+		),
+		with: {
+			user: true, // sender
+			friend: true, // recipient
+		},
+	});
+
+	const friends = friendsRecords.map((f) => {
+		if (f.userId === user.id) {
+			return f.friend;
+		}
+		return f.user;
+	});
+
+	return c.json({ friends });
+});
 
 export default app;
