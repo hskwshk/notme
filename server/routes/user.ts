@@ -87,4 +87,105 @@ const app = new Hono<HonoEnv>()
 		return c.json({ success: true, status: "pending" });
 	});
 
+app.get("/me/friend-requests", async (c) => {
+	const db = c.get("db");
+	const user = c.get("user");
+
+	if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+	const requests = await db.query.friendship.findMany({
+		where: and(
+			eq(friendship.friendId, user.id),
+			eq(friendship.status, "pending"),
+		),
+		with: {
+			user: true, // The sender
+		},
+	});
+
+	return c.json({ requests });
+});
+
+app.post("/friend-request/:requestId/accept", async (c) => {
+	const db = c.get("db");
+	const user = c.get("user");
+	const requestId = c.req.param("requestId");
+
+	if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+	// Verify request exists and is for me
+	const request = await db.query.friendship.findFirst({
+		where: and(
+			eq(friendship.id, requestId),
+			eq(friendship.friendId, user.id),
+			eq(friendship.status, "pending"),
+		),
+	});
+
+	if (!request) {
+		return c.json({ error: "Friend request not found" }, 404);
+	}
+
+	// Accept
+	await db
+		.update(friendship)
+		.set({ status: "accepted" })
+		.where(eq(friendship.id, requestId));
+
+	return c.json({ success: true });
+});
+
+app.delete("/friend-request/:requestId", async (c) => {
+	const db = c.get("db");
+	const user = c.get("user");
+	const requestId = c.req.param("requestId");
+
+	if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+	// Verify request exists and involves me
+	const request = await db.query.friendship.findFirst({
+		where: eq(friendship.id, requestId),
+	});
+
+	if (!request) {
+		return c.json({ error: "Friend request not found" }, 404);
+	}
+
+	if (request.userId !== user.id && request.friendId !== user.id) {
+		return c.json({ error: "Unauthorized" }, 403);
+	}
+
+	// Delete
+	await db.delete(friendship).where(eq(friendship.id, requestId));
+
+	return c.json({ success: true });
+});
+
+app.get("/me/friends", async (c) => {
+	const db = c.get("db");
+	const user = c.get("user");
+
+	if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+	const friendsRecords = await db.query.friendship.findMany({
+		where: and(
+			or(eq(friendship.userId, user.id), eq(friendship.friendId, user.id)),
+			eq(friendship.status, "accepted"),
+		),
+		with: {
+			user: true, // sender
+			friend: true, // recipient
+		},
+	});
+
+	const friends = friendsRecords.map((f) => {
+		if (f.userId === user.id) {
+			return f.friend;
+		}
+		return f.user;
+	});
+
+	return c.json({ friends });
+});
+
 export default app;
