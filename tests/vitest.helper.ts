@@ -48,6 +48,7 @@ export async function setup() {
 		const user: typeof schema.user.$inferInsert = {
 			id: overrides?.id || crypto.randomUUID(),
 			name: "Test User",
+			username: overrides?.username || `user-${crypto.randomUUID()}`,
 			email: overrides?.email || `test-${crypto.randomUUID()}@example.com`,
 			image: "https://example.com/avatar.png",
 			createdAt: new Date("2026-01-01"),

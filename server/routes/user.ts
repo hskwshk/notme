@@ -2,6 +2,7 @@ import { zValidator } from "@hono/zod-validator";
 import { and, eq, gte, like, or, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
+import { auth } from "@/lib/auth";
 import type { HonoEnv } from "@/server/types";
 import {
 	activityLog,
@@ -10,6 +11,8 @@ import {
 	userStamp,
 	user as userTable,
 } from "../../db/schema";
+import { createFileRepository } from "../infrastructure/repositories/file";
+import { FileId } from "../objects/file";
 
 const app = new Hono<HonoEnv>()
 	.get(
@@ -370,6 +373,98 @@ app
 						);
 				}
 			});
+			return c.json({ success: true });
+		},
+	)
+	.post("/me/profile/image", async (c) => {
+		const db = c.get("db");
+		const sessionUser = c.get("user");
+
+		if (!sessionUser) return c.json({ error: "Unauthorized" }, 401);
+
+		const body = await c.req.parseBody();
+		const file = body["file"];
+
+		if (!file || !(file instanceof File)) {
+			return c.json({ error: "No file uploaded" }, 400);
+		}
+
+		const { client, baseUrl } = c.get("r2");
+		const fileRepository = createFileRepository(client, db, baseUrl);
+
+		const blobFile = {
+			kind: "BlobFile" as const,
+			id: FileId(crypto.randomUUID()),
+			bucket: "uploads",
+			key: `users/${sessionUser.id}/${Date.now()}-${file.name}`,
+			blob: file,
+			contentType: file.type,
+			expiresAt: null,
+		};
+
+		const uploaded = await fileRepository.saveBlobFile(blobFile);
+		const imageUrl = `${baseUrl}/${uploaded.bucket}/${uploaded.key}`;
+
+		await db
+			.update(userTable)
+			.set({ image: imageUrl })
+			.where(eq(userTable.id, sessionUser.id));
+
+		return c.json({ url: imageUrl });
+	})
+	.put(
+		"/me/profile",
+		zValidator(
+			"json",
+			z.object({
+				name: z.string().min(1).optional(),
+				username: z
+					.string()
+					.min(1)
+					.regex(
+						/^[a-zA-Z0-9_]+$/,
+						"Only letters, numbers and underscores allowed",
+					)
+					.optional(),
+				password: z.string().min(8).optional(),
+				characterName: z.string().optional(),
+			}),
+		),
+		async (c) => {
+			const db = c.get("db");
+			const sessionUser = c.get("user");
+			const { name, username, characterName } = c.req.valid("json");
+
+			if (!sessionUser) return c.json({ error: "Unauthorized" }, 401);
+
+			// Fetch full user to get current username
+			const user = await db.query.user.findFirst({
+				where: eq(userTable.id, sessionUser.id),
+			});
+
+			if (!user) return c.json({ error: "User not found" }, 404);
+
+			// Check username uniqueness if changing
+			if (username && username !== user.username) {
+				const existing = await db.query.user.findFirst({
+					where: eq(userTable.username, username),
+				});
+				if (existing) {
+					return c.json({ error: "Username already taken" }, 400);
+				}
+			}
+
+			// Update User
+			await db
+				.update(userTable)
+				.set({
+					name: name ?? undefined,
+					username: username ?? undefined,
+					characterName: characterName ?? undefined,
+				})
+				.where(eq(userTable.id, user.id));
+
+			// Password update skipped (see previous notes)
 
 			return c.json({ success: true });
 		},
