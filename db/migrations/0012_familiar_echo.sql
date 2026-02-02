@@ -1,0 +1,1 @@
+ALTER TABLE "user_stamp" ALTER COLUMN "favorite_order" SET DEFAULT 0;
