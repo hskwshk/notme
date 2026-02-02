@@ -1,0 +1,1 @@
+ALTER TABLE "activity_log" ADD COLUMN "is_stamp_viewed" boolean DEFAULT false NOT NULL;

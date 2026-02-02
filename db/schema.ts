@@ -13,6 +13,7 @@ import {
 export const user = pgTable("user", {
 	id: text("id").primaryKey(),
 	name: text("name").notNull(),
+	username: text("username").unique(),
 	email: text("email").notNull().unique(),
 	emailVerified: boolean("email_verified").default(false).notNull(),
 	image: text("image"),
@@ -176,6 +177,7 @@ export const activityLog = pgTable(
 			.references(() => user.id, { onDelete: "cascade" }),
 		date: text("date").notNull(), // YYYY-MM-DD
 		durationMinutes: bigint("duration_minutes", { mode: "number" }).notNull(),
+		isStampViewed: boolean("is_stamp_viewed").default(false).notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 	},
 	(table) => [
@@ -280,6 +282,8 @@ export const userStamp = pgTable(
 		stampId: text("stamp_id")
 			.notNull()
 			.references(() => stamp.id, { onDelete: "cascade" }),
+		isFavorite: boolean("is_favorite").default(false).notNull(),
+		favoriteOrder: bigint("favorite_order", { mode: "number" }),
 		obtainedAt: timestamp("obtained_at").defaultNow().notNull(),
 	},
 	(table) => [
@@ -338,4 +342,73 @@ export const userGamificationRelations = relations(user, ({ many }) => ({
 	dailyGoals: many(userDailyGoal),
 	activityLogs: many(activityLog),
 	notifications: many(appNotification),
+	exerciseSessions: many(exerciseSession),
+	friendships: many(friendship, { relationName: "user_friendships" }),
 }));
+
+export const friendship = pgTable(
+	"friendship",
+	{
+		id: text("id").primaryKey().notNull(),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		friendId: text("friend_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		status: text("status").notNull().default("pending"), // pending, accepted
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.defaultNow()
+			.$onUpdate(() => /* @__PURE__ */ new Date())
+			.notNull(),
+	},
+	(table) => [
+		index("friendship_userId_idx").on(table.userId),
+		index("friendship_friendId_idx").on(table.friendId),
+		uniqueIndex("friendship_userId_friendId_idx").on(
+			table.userId,
+			table.friendId,
+		),
+	],
+);
+
+export const friendshipRelations = relations(friendship, ({ one }) => ({
+	user: one(user, {
+		fields: [friendship.userId],
+		references: [user.id],
+		relationName: "user_friendships",
+	}),
+	friend: one(user, {
+		fields: [friendship.friendId],
+		references: [user.id],
+		relationName: "user_friends_of",
+	}),
+}));
+
+export const exerciseSession = pgTable(
+	"exercise_session",
+	{
+		id: text("id").primaryKey().notNull(),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		startTime: timestamp("start_time").notNull(),
+		durationSeconds: bigint("duration_seconds", { mode: "number" }).notNull(),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+	},
+	(table) => [
+		index("exercise_session_userId_idx").on(table.userId),
+		index("exercise_session_startTime_idx").on(table.startTime),
+	],
+);
+
+export const exerciseSessionRelations = relations(
+	exerciseSession,
+	({ one }) => ({
+		user: one(user, {
+			fields: [exerciseSession.userId],
+			references: [user.id],
+		}),
+	}),
+);
