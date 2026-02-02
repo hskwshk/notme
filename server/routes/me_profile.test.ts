@@ -285,4 +285,31 @@ describe("GET /me/profile", () => {
 		const json = await res.json();
 		expect(json.error).toBe("Username already taken");
 	});
+	it("fails to update profile with invalid password", async () => {
+		const userMe = await createUser({ id: "me_password_fail" });
+		const app = new Hono<HonoEnv>()
+			.use(async (c, next) => {
+				c.set("db", db);
+				// @ts-expect-error: Mock user type mismatch
+				c.set("user", userMe);
+				await next();
+			})
+			.route("/", userRoute);
+
+		// Too short
+		let res = await app.request("/me/profile", {
+			method: "PUT",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ password: "short" }),
+		});
+		expect(res.status).toBe(400);
+
+		// Non-alphanumeric
+		res = await app.request("/me/profile", {
+			method: "PUT",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ password: "password!" }),
+		});
+		expect(res.status).toBe(400);
+	});
 });
