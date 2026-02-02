@@ -3,6 +3,10 @@
 import { useEffect, useState } from "react";
 import { BottomNav } from "@/components/bottom-nav";
 import { DailyGoalManager } from "@/components/daily-goal-manager";
+import {
+	FriendActivityCard,
+	type FriendData,
+} from "@/components/home/friend-activity-card";
 import { HomeHeader } from "@/components/home/home-header";
 import { StatsCard } from "@/components/home/stats-card";
 import { UserSection } from "@/components/home/user-section";
@@ -32,6 +36,7 @@ interface HomeData {
 	dailyQuote: {
 		text: string;
 	} | null;
+	friends: FriendData[];
 }
 
 export default function Home() {
@@ -85,7 +90,17 @@ export default function Home() {
 						quote={data.dailyQuote?.text ?? null}
 					/>
 
-					{/* Placeholder for other users/friends list if needed */}
+					{/* Friends List */}
+					{data.friends?.length > 0 && (
+						<div className="space-y-4">
+							<h3 className="text-sm font-bold text-gray-500 px-4">
+								友達の活動
+							</h3>
+							{data.friends.map((friend) => (
+								<FriendActivityCard key={friend.user.id} friend={friend} />
+							))}
+						</div>
+					)}
 				</main>
 
 				{/* Bottom Navigation */}
