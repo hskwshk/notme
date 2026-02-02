@@ -35,7 +35,7 @@ export function CharacterModal({
 			>
 				<div className="relative bg-[#FFFDD0] rounded-xl shadow-xl">
 					{/* 閉じるボタン */}
-					<div className="absolute top-6 right-6">
+					<div className="absolute top-[10px] left-[15px]">
 						<button
 							type="button"
 							onClick={onClose}
