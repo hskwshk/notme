@@ -58,10 +58,10 @@ const noticesByDate = [
 
 export default function Notice() {
 	return (
-		<main className="bg-[#F4F4F4]">
+		<main className="mt-[50px]">
 			<Top name={pageName} />
 
-			<div>
+			<div className="flex flex-col items-center">
 				{noticesByDate.map((group) => (
 					<section key={group.date}>
 						<h2 className="mb-[23px] text-[20px] font-bold text-black">
