@@ -1,10 +1,12 @@
-type CardProrps = {
+// import Image from "next/image";
+
+type CardProps = {
 	title: string;
 	description: string;
 	isUnread?: boolean; // 未読フラグ
 };
 
-export function Card({ title, description, isUnread = false }: CardProrps) {
+export function Card({ title, description, isUnread = false }: CardProps) {
 	return (
 		<div className="relative flex items-center bg-white w-[353px] h-[125px] p-4 mb-[40px] rounded-[30px] text-black">
 			{/* 未読バッジ（isUnreadがtrueの時だけ表示）*/}

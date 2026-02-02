@@ -1,9 +1,15 @@
 // app/notice/page.tsx
 "use client";
 
+// import { group } from "console";
+// import Image from "next/image";
 import { Card } from "@/components/notice-card";
+import { Top } from "@/components/top";
 
-// 日付ごとのテストデータ
+// トップのテストデータ
+const pageName = "通知";
+
+// 通知のテストデータ
 const noticesByDate = [
 	{
 		date: "1月31日",
@@ -55,13 +61,15 @@ const noticesByDate = [
 
 export default function Notice() {
 	return (
-		<main>
-			<h1 className="text-xl font-bold text-center">通知</h1>
+		<main className="bg-[#F4F4F4]">
+			<Top name={pageName} />
 
 			<div>
 				{noticesByDate.map((group) => (
 					<section key={group.date}>
-						<h2 className="mb-[23px] text-[20px] font-bold">{group.date}</h2>
+						<h2 className="mb-[23px] text-[20px] font-bold text-black">
+							{group.date}
+						</h2>
 						<div>
 							{group.notices.map((notice) => (
 								<Card
