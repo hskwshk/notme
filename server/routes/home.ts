@@ -1,7 +1,12 @@
-import { and, eq, gte } from "drizzle-orm";
+import { and, eq, gte, or } from "drizzle-orm";
 import { Hono } from "hono";
 import { v4 as uuidv4 } from "uuid";
-import { activityLog, appNotification, user as userTable } from "@/db/schema";
+import {
+	activityLog,
+	appNotification,
+	friendship,
+	user as userTable,
+} from "@/db/schema";
 import { calculateStampFromLog } from "@/server/objects/stamp";
 import { calculateCurrentStreak } from "@/server/services/streak";
 import type { HonoEnv } from "@/server/types";
@@ -194,6 +199,99 @@ const homeRoute = new Hono<HonoEnv>()
 				shouldShow: shouldShowStampModal,
 				stamp: stampData,
 			},
+			friends: await Promise.all(
+				(
+					await db
+						.select()
+						.from(friendship)
+						.where(
+							and(
+								or(
+									eq(friendship.userId, user.id),
+									eq(friendship.friendId, user.id),
+								),
+								eq(friendship.status, "accepted"),
+							),
+						)
+				).map(async (f) => {
+					// Determines the OTHER user's ID
+					const friendUserId = f.userId === user.id ? f.friendId : f.userId;
+
+					// Fetch Friend Profile
+					const friendProfile = await db.query.user.findFirst({
+						where: eq(userTable.id, friendUserId),
+						columns: {
+							name: true,
+							image: true,
+							characterName: true,
+							level: true,
+							currentStreak: true,
+							maxStreak: true,
+							maxMinutes: true,
+						},
+					});
+
+					if (!friendProfile) return null;
+
+					// Fetch Friend's Today Log
+					const friendTodayLog = await db.query.activityLog.findFirst({
+						where: and(
+							eq(activityLog.userId, friendUserId),
+							eq(activityLog.date, today),
+						),
+					});
+
+					// Fetch Friend's Recent Logs (for graph)
+					// Reusing logic: last 5 days
+					const friendRecentLogs = await db
+						.select()
+						.from(activityLog)
+						.where(
+							and(
+								eq(activityLog.userId, friendUserId),
+								gte(activityLog.date, thirtyDaysAgoStr), // fetching enough for graph
+							),
+						);
+
+					const friendGraphData = [];
+					// Max for graph scaling (optional, UI might use fixed or relative)
+					// Just returning the data points
+					for (let i = 4; i >= 0; i--) {
+						const d = new Date();
+						d.setDate(d.getDate() - i);
+						const dateStr = d.toISOString().split("T")[0];
+						let label = "";
+						if (i === 0) label = "今日";
+						else if (i === 1) label = "昨日";
+						else label = `${i}日前`;
+
+						const log = friendRecentLogs.find((l) => l.date === dateStr);
+						friendGraphData.push({
+							label,
+							minutes: log?.durationMinutes || 0,
+							type: "daily",
+							isMostEffort: false,
+						});
+					}
+
+					return {
+						user: {
+							name: friendProfile.name,
+							image: friendProfile.image,
+							characterName: friendProfile.characterName,
+							level: friendProfile.level,
+						},
+						stats: {
+							currentStreak: friendProfile.currentStreak,
+							maxStreak: friendProfile.maxStreak,
+							todayExerciseMinutes: friendTodayLog?.durationMinutes || 0,
+							maxExerciseMinutes: friendProfile.maxMinutes,
+							graphData: friendGraphData,
+						},
+						quote: quote ? { text: quote.content } : null, // Reusing system quote
+					};
+				}),
+			).then((list) => list.filter((f) => f !== null)),
 		});
 	})
 	.post("/stamp-seen", async (c) => {
