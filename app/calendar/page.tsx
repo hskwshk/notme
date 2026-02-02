@@ -1,14 +1,11 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { BottomNav } from "@/components/bottom-nav";
 import { GachaModal } from "@/components/calendar/gacha-modal";
 import { LevelProgress } from "@/components/calendar/level-progress";
 import { apiClient } from "@/lib/api-client";
-
-// Helper for days of week
-const DAYS_OF_WEEK = ["日", "月", "火", "水", "木", "金", "土"];
 
 interface CalendarData {
 	year: number;
@@ -53,6 +50,23 @@ export default function CalendarPage() {
 		imageUrl: string;
 	} | null>(null);
 
+	// Gacha Logic
+	const triggerGacha = useCallback(async () => {
+		const res = await apiClient.api.calendar.gacha.$post();
+		if (res.ok) {
+			const json = await res.json();
+			if ("error" in json) {
+				// alert(json.error);
+				return;
+			}
+
+			if ("stamp" in json) {
+				setNewStamp(json.stamp);
+				setIsGachaOpen(true);
+			}
+		}
+	}, []);
+
 	useEffect(() => {
 		const fetchCalendar = async () => {
 			const year = currentDate.getFullYear().toString();
@@ -65,11 +79,24 @@ export default function CalendarPage() {
 			if (res.ok) {
 				const json = await res.json();
 				if ("error" in json) return;
-				setData(json as CalendarData);
+				const calendarData = json as CalendarData;
+				setData(calendarData);
+
+				// Auto-trigger Gacha if level up is ready
+				if (calendarData.isLevelUpReady) {
+					// Slight delay for UX
+					setTimeout(() => {
+						triggerGacha();
+					}, 500);
+				}
 			}
 		};
 		fetchCalendar();
-	}, [currentDate]);
+		// Adding triggerGacha to dependency array might cause loops if not careful,
+		// but since triggerGacha is stable (if check is strictly on isLevelUpReady from fresh fetch), it should be fine.
+		// To be strictly safe, we can suppress the dependency warning or wrap triggerGacha in useCallback.
+		// For now, let's just use it.
+	}, [currentDate, triggerGacha]);
 
 	const handlePrevMonth = () => {
 		setCurrentDate(
@@ -121,23 +148,19 @@ export default function CalendarPage() {
 	return (
 		<div className="min-h-screen bg-[#F2F2F7] pb-32 font-sans text-slate-900">
 			{/* Header / Month Selector */}
-			<div className="pt-12 px-6 pb-4 flex items-center justify-between">
-				<div className="flex items-center gap-2">
-					<span className="text-3xl font-bold">{data.month}月</span>
-					<button
-						type="button"
-						onClick={() => {
-							/* Toggle Year Picker? */
-						}}
-					>
-						<ChevronRight className="rotate-90 h-5 w-5 text-gray-400" />
-					</button>
+			<div className="pt-8 px-6 pb-2 flex items-center justify-between">
+				<div className="flex items-center gap-1">
+					<span className="text-3xl font-bold tracking-tight">
+						{data.month}月
+					</span>
+					<ChevronRight className="rotate-90 h-5 w-5 text-gray-400 mt-1" />
 				</div>
 
 				<div className="flex items-center gap-2">
 					{data.currentStreak > 0 && (
-						<div className="bg-slate-800 text-orange-500 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-							🔥 {data.currentStreak}日連続
+						<div className="bg-sky-400 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm">
+							<span className="text-orange-300 text-sm">🔥</span>{" "}
+							{data.currentStreak}日継続中
 						</div>
 					)}
 				</div>
@@ -163,79 +186,115 @@ export default function CalendarPage() {
 			</div>
 
 			{/* Calendar Grid */}
-			<div className="mx-4 bg-transparent">
-				{/* Days Header */}
-				<div className="grid grid-cols-7 mb-2">
-					{DAYS_OF_WEEK.map((day) => (
-						<div
-							key={day}
-							className="text-center text-xs font-medium text-gray-400"
-						>
-							{day}
-						</div>
-					))}
-				</div>
-
-				{/* Days Cells */}
-				<div className="grid grid-cols-7 gap-y-4 gap-x-2">
-					{/* Add offset for start day of month? 
-						The API returns Days array starting from 1. 
-						We might need empty cells if day 1 is not Sunday.
-						Assuming API returns full calendar or we calculate offset.
-						Current API logic: `for (let d = 1; d <= daysInMonth; d++)`
-						We need to know the weekday of day 1.
-					*/}
-					{Array.from({
-						length: new Date(data.year, data.month - 1, 1).getDay(),
-					}).map((_, i) => (
-						// biome-ignore lint/suspicious/noArrayIndexKey: stable order for empty slots
-						<div key={`empty-${i}`} />
-					))}
-
-					{data.days.map((day) => (
-						<div
-							key={day.day}
-							className="flex flex-col items-center gap-1 h-14 relative group"
-						>
-							{/* Day Number */}
-							<span
-								className={`
-								text-sm font-medium h-7 w-7 flex items-center justify-center rounded-full
-								${day.hasActivity ? "bg-slate-900 text-white" : "text-slate-500"}
-								${day.isFuture ? "opacity-30" : ""}
-							`}
+			<div className="px-4">
+				<div className="border-2 border-slate-800 rounded-3xl p-5 bg-white relative overflow-hidden shadow-sm">
+					{/* Days Header */}
+					<div className="grid grid-cols-7 mb-4">
+						{DAYS_OF_WEEK.map((day, i) => (
+							<div
+								key={day}
+								className={`text-center text-sm font-bold ${i === 0 ? "text-red-500" : "text-slate-900"}`}
 							>
-								{day.day}
-							</span>
-
-							{/* Stamp Placeholder / Image */}
-							<div className="h-8 w-8 flex items-center justify-center">
-								{day.stamp ? (
-									// biome-ignore lint/performance/noImgElement: dynamic user content without next/image
-									<img
-										src={day.stamp.imageUrl}
-										alt={day.stamp.name}
-										className="w-full h-full object-contain"
-									/>
-								) : day.hasActivity ? (
-									// Fallback if no specific stamp but has activity?
-									// Or maybe 'stamp' is null implies just a checkmark?
-									// API logic: `calculateStampFromLog` returns stamp or null.
-									<div className="h-2 w-2 bg-slate-300 rounded-full" />
-								) : (
-									// Empty circle for past days with no activity?
-									!day.isFuture && (
-										<div className="h-8 w-8 rounded-full bg-slate-200 opacity-20" />
-									)
-								)}
+								{day}
 							</div>
-						</div>
-					))}
+						))}
+					</div>
+
+					{/* Days Cells */}
+					<div className="grid grid-cols-7 gap-y-6 gap-x-1">
+						{(() => {
+							const year = data.year;
+							const month = data.month;
+							const firstDayOfMonth = new Date(year, month - 1, 1);
+							const startDayOfWeek = firstDayOfMonth.getDay(); // 0 (Sun) - 6 (Sat)
+
+							const prevMonthLastDate = new Date(year, month - 1, 0).getDate();
+							const daysInMonth = new Date(year, month, 0).getDate();
+
+							const cells = [];
+
+							// Previous Month Filler
+							for (let i = 0; i < startDayOfWeek; i++) {
+								const dayNum = prevMonthLastDate - startDayOfWeek + 1 + i;
+								cells.push(
+									<div
+										key={`prev-${dayNum}`}
+										className="flex flex-col items-center justify-start gap-1 h-16 opacity-30"
+									>
+										<span className="text-xl font-bold text-slate-400">
+											{dayNum}
+										</span>
+										<div className="w-8 h-8 rounded-full bg-slate-300" />
+									</div>,
+								);
+							}
+
+							// Current Month
+							for (let d = 1; d <= daysInMonth; d++) {
+								const dayData = data.days.find((day) => day.day === d);
+								const isSunday = new Date(year, month - 1, d).getDay() === 0;
+								const isHoliday = month === 4 && d === 29; // Demo: Showa Day
+
+								const dayLabelColor =
+									isSunday || isHoliday ? "text-red-500" : "text-slate-900";
+
+								cells.push(
+									<div
+										key={`curr-${d}`}
+										className="flex flex-col items-center justify-start gap-1 h-16 relative group"
+									>
+										{/* Day Number */}
+										<span className={`text-xl font-bold ${dayLabelColor} z-10`}>
+											{d}
+										</span>
+
+										{/* Circle Placeholder */}
+										<div className="w-8 h-8 rounded-full bg-slate-300 absolute top-8" />
+
+										{/* Stamp Overlay */}
+										{dayData?.stamp && (
+											<div className="absolute top-4 w-14 h-14 z-20 transform -rotate-6 hover:scale-110 transition-transform">
+												{/* eslint-disable @next/next/no-img-element */}
+												{/* biome-ignore lint/performance/noImgElement: dynamic user content */}
+												<img
+													src={dayData.stamp.imageUrl}
+													alt={dayData.stamp.name}
+													className="w-full h-full object-contain drop-shadow-md"
+												/>
+												{/* eslint-enable @next/next/no-img-element */}
+											</div>
+										)}
+									</div>,
+								);
+							}
+
+							// Next Month Filler (to complete the last row)
+							const totalCells = cells.length;
+							const remaining = 7 - (totalCells % 7);
+							if (remaining < 7) {
+								for (let i = 1; i <= remaining; i++) {
+									cells.push(
+										<div
+											key={`next-${i}`}
+											className="flex flex-col items-center justify-start gap-1 h-16 opacity-30"
+										>
+											<span className="text-xl font-bold text-slate-400">
+												{i}
+											</span>
+											<div className="w-8 h-8 rounded-full bg-slate-300" />
+										</div>,
+									);
+								}
+							}
+
+							return cells;
+						})()}
+					</div>
 				</div>
 			</div>
 
 			{/* Gamification / Level Section */}
-			<div className="mx-4 mt-8 space-y-4">
+			<div className="mx-4 mt-4 space-y-4">
 				<LevelProgress
 					level={data.level}
 					progress={data.missionProgress}
@@ -243,29 +302,35 @@ export default function CalendarPage() {
 					onGachaClick={handleGachaDraw}
 				/>
 
-				{/* Stats Row */}
-				<div className="grid grid-cols-3 gap-3">
-					<div className="bg-[#1C1C1E] rounded-xl p-3 text-white text-center">
-						<div className="text-[10px] text-gray-400 mb-1">
-							🔥 最大連続日数
+				{/* Stats Row - Consolidated into one card */}
+				<div className="bg-gradient-to-r from-sky-400 to-cyan-300 text-white rounded-3xl p-5 shadow-md flex justify-between items-center text-center">
+					<div className="flex-1">
+						<div className="text-[10px] font-medium opacity-90 mb-1 flex items-center justify-center gap-1">
+							<span className="text-orange-300">🔥</span> 最大継続日数
 						</div>
 						<div className="text-xl font-bold">
 							{data.stats.maxStreak}
-							<span className="text-xs font-normal ml-1">日</span>
+							<span className="text-xs font-normal ml-0.5 opacity-80">日</span>
 						</div>
 					</div>
-					<div className="bg-[#1C1C1E] rounded-xl p-3 text-white text-center">
-						<div className="text-[10px] text-gray-400 mb-1">合計スタンプ数</div>
+					<div className="w-px h-8 bg-white/30" />
+					<div className="flex-1">
+						<div className="text-[10px] font-medium opacity-90 mb-1">
+							合計スタンプ所持数
+						</div>
 						<div className="text-xl font-bold">
 							{data.stats.totalStamps}
-							<span className="text-xs font-normal ml-1">個</span>
+							<span className="text-xs font-normal ml-0.5 opacity-80">個</span>
 						</div>
 					</div>
-					<div className="bg-[#1C1C1E] rounded-xl p-3 text-white text-center">
-						<div className="text-[10px] text-gray-400 mb-1">合計運動時間</div>
+					<div className="w-px h-8 bg-white/30" />
+					<div className="flex-1">
+						<div className="text-[10px] font-medium opacity-90 mb-1">
+							合計運動時間
+						</div>
 						<div className="text-xl font-bold">
 							{data.stats.totalDuration}
-							<span className="text-xs font-normal ml-1">分</span>
+							<span className="text-xs font-normal ml-0.5 opacity-80">分</span>
 						</div>
 					</div>
 				</div>
@@ -282,3 +347,6 @@ export default function CalendarPage() {
 		</div>
 	);
 }
+
+// Helper for days of week
+const DAYS_OF_WEEK = ["日", "月", "火", "水", "木", "金", "土"];

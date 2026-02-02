@@ -13,6 +13,7 @@ import {
 export const user = pgTable("user", {
 	id: text("id").primaryKey(),
 	name: text("name").notNull(),
+	username: text("username").unique(),
 	email: text("email").notNull().unique(),
 	emailVerified: boolean("email_verified").default(false).notNull(),
 	image: text("image"),
@@ -282,6 +283,8 @@ export const userStamp = pgTable(
 			.notNull()
 			.references(() => stamp.id, { onDelete: "cascade" }),
 		obtainedAt: timestamp("obtained_at").defaultNow().notNull(),
+		isFavorite: boolean("is_favorite").default(false).notNull(),
+		favoriteOrder: bigint("favorite_order", { mode: "number" }).default(0),
 	},
 	(table) => [
 		index("user_stamp_userId_idx").on(table.userId),

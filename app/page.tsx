@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { DailyGoalManager } from "@/components/daily-goal-manager";
+import {
+	FriendActivityCard,
+	type FriendData,
+} from "@/components/home/friend-activity-card";
 import { HomeHeader } from "@/components/home/home-header";
 import { StatsCard } from "@/components/home/stats-card";
 import { UserSection } from "@/components/home/user-section";
@@ -21,6 +25,7 @@ interface HomeData {
 		maxStreak: number;
 		todayExerciseMinutes: number;
 		maxExerciseMinutes: number;
+		monthMaxMinutes: number;
 		graphData: {
 			label: string;
 			minutes: number;
@@ -30,6 +35,7 @@ interface HomeData {
 	dailyQuote: {
 		text: string;
 	} | null;
+	friends: FriendData[];
 }
 
 export default function Home() {
@@ -82,7 +88,17 @@ export default function Home() {
 						quote={data.dailyQuote?.text ?? null}
 					/>
 
-					{/* Placeholder for other users/friends list if needed */}
+					{/* Friends List */}
+					{data.friends?.length > 0 && (
+						<div className="space-y-4">
+							<div className="flex items-center justify-between mx-4 mt-2">
+								<h2 className="font-bold text-lg">友達</h2>
+							</div>
+							{data.friends.map((friend) => (
+								<FriendActivityCard key={friend.user.id} friend={friend} />
+							))}
+						</div>
+					)}
 				</main>
 			</div>
 		</div>

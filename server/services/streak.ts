@@ -4,8 +4,13 @@ export const calculateCurrentStreak = (dates: string[]): number => {
 	// Sort dates descending (newest first) just in case
 	const sortedDates = [...dates].sort((a, b) => b.localeCompare(a));
 
-	const today = new Date();
-	const todayStr = today.toISOString().split("T")[0];
+	const todayStr = new Date()
+		.toLocaleDateString("ja-JP", {
+			year: "numeric",
+			month: "2-digit",
+			day: "2-digit",
+		})
+		.replaceAll("/", "-");
 
 	// Helper to subtract days
 	const getPreviousDateStr = (baseDateStr: string): string => {
