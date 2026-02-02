@@ -50,12 +50,16 @@ export function FriendActivityCard({ friend }: FriendActivityCardProps) {
 					{/* Avatar */}
 					<div className="h-10 w-10 rounded-full bg-gray-300 overflow-hidden shrink-0 border border-white shadow-sm">
 						{friend.user.image ? (
-							// eslint-disable-next-line @next/next/no-img-element
-							<img
-								src={friend.user.image}
-								alt={friend.user.name}
-								className="h-full w-full object-cover"
-							/>
+							<>
+								{/* eslint-disable @next/next/no-img-element */}
+								{/* biome-ignore lint/performance/noImgElement: dynamic user content */}
+								<img
+									src={friend.user.image}
+									alt={friend.user.name}
+									className="h-full w-full object-cover"
+								/>
+								{/* eslint-enable @next/next/no-img-element */}
+							</>
 						) : (
 							<div className="h-full w-full bg-gray-300" />
 						)}

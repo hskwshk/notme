@@ -254,13 +254,14 @@ export default function CalendarPage() {
 										{/* Stamp Overlay */}
 										{dayData?.stamp && (
 											<div className="absolute top-4 w-14 h-14 z-20 transform -rotate-6 hover:scale-110 transition-transform">
+												{/* eslint-disable @next/next/no-img-element */}
 												{/* biome-ignore lint/performance/noImgElement: dynamic user content */}
-												{/* eslint-disable-next-line @next/next/no-img-element */}
 												<img
 													src={dayData.stamp.imageUrl}
 													alt={dayData.stamp.name}
 													className="w-full h-full object-contain drop-shadow-md"
 												/>
+												{/* eslint-enable @next/next/no-img-element */}
 											</div>
 										)}
 									</div>,
