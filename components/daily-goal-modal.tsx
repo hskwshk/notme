@@ -42,7 +42,7 @@ export function DailyGoalModal({ goal, onClose }: DailyGoalModalProps) {
 			}`}
 		>
 			<div
-				className={`relative w-full max-w-sm overflow-hidden rounded-3xl bg-white text-center shadow-2xl transition-all duration-300 ${
+				className={`relative w-full max-w-sm overflow-hidden rounded-3xl bg-[#FEF9E2] text-center shadow-2xl transition-all duration-300 border-4 border-[#FDF0C6] ${
 					isVisible
 						? "scale-100 opacity-100 translate-y-0"
 						: "scale-95 opacity-0 translate-y-4"
@@ -52,33 +52,41 @@ export function DailyGoalModal({ goal, onClose }: DailyGoalModalProps) {
 				<button
 					type="button"
 					onClick={handleClose}
-					className="absolute left-4 top-4 rounded-full p-2 text-gray-500 hover:bg-gray-100 transition-colors"
+					className="absolute left-4 top-4 rounded-full p-2 text-gray-500 hover:bg-black/5 transition-colors"
 					aria-label="Close"
 				>
 					<X className="h-6 w-6" />
 				</button>
 
 				<div className="flex flex-col items-center px-6 pt-16 pb-12">
-					<p className="text-sm font-medium text-gray-500 mb-2">
+					<p className="text-sm font-bold text-gray-800 mb-6 tracking-wider">
 						今日のあなたの人生は
 					</p>
 
-					<h2 className="text-3xl font-black text-gray-900 mb-8 tracking-wide">
+					<h2 className="text-3xl font-black text-black mb-6 tracking-wide leading-tight">
 						{goal.title}
 					</h2>
 
-					<div className="relative mb-8 w-48 h-48 flex items-center justify-center">
+					<div className="relative mb-6 w-48 h-48 flex items-center justify-center">
 						{!imageError && goal.imageUrl ? (
-							<div className="w-full h-full relative">
+							<div className="w-full h-full relative group">
 								<Image
 									src={goal.imageUrl}
 									alt={goal.title}
 									fill
-									className="object-contain"
+									className="object-contain drop-shadow-md transform group-hover:scale-105 transition-transform duration-300"
 									onError={() => setImageError(true)}
 									sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-									unoptimized // Allow external images without config
+									unoptimized
 								/>
+								{/* Hanko / Stamp decoration */}
+								<div className="absolute bottom-2 right-2 border-2 border-red-500 rounded p-1 rotate-[-10deg] opacity-80 pointer-events-none">
+									<span className="text-[10px] font-bold text-red-500 block leading-none">
+										どう
+										<br />
+										なし
+									</span>
+								</div>
 							</div>
 						) : (
 							<div className="text-9xl flex items-center justify-center">
@@ -87,13 +95,22 @@ export function DailyGoalModal({ goal, onClose }: DailyGoalModalProps) {
 						)}
 					</div>
 
-					<div className="space-y-1">
-						<p className="font-bold text-gray-800">{goal.description}</p>
-						<p className="text-sm text-gray-500">{goal.footer}</p>
+					<div className="space-y-4 w-full">
+						{/* Time / Difficulty */}
+						<div className="text-center">
+							<p className="text-sm font-bold text-gray-600">
+								目安：{goal.footer || "30分以上"}
+							</p>
+						</div>
+
+						{/* Description */}
+						<div className="text-center">
+							<p className="font-bold text-black text-lg leading-relaxed">
+								{goal.description}
+							</p>
+						</div>
 					</div>
 				</div>
-
-				{/* Decorative stamp effect could go here */}
 			</div>
 		</div>,
 		document.body,

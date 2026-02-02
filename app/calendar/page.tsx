@@ -7,9 +7,6 @@ import { GachaModal } from "@/components/calendar/gacha-modal";
 import { LevelProgress } from "@/components/calendar/level-progress";
 import { apiClient } from "@/lib/api-client";
 
-// Helper for days of week
-const DAYS_OF_WEEK = ["日", "月", "火", "水", "木", "金", "土"];
-
 interface CalendarData {
 	year: number;
 	month: number;
@@ -86,15 +83,7 @@ export default function CalendarPage() {
 				setData(calendarData);
 
 				// Auto-trigger Gacha if level up is ready
-				// Check against local storage or just trigger once per viewing to avoid annoyance?
-				// User request: "Level up moment -> auto move".
-				// Since backend handles the actual level up on POST, we can safely trigger it if ready.
 				if (calendarData.isLevelUpReady) {
-					// We need to call handleGachaDraw, but it depends on 'data' state which might not be set yet inside this closure if we used 'data'.
-					// Using the fetched 'calendarData' directly.
-					// We should wrap this in a separate effect or call it here.
-					// Calling a separate async function to handle the draw.
-
 					// Slight delay for UX
 					setTimeout(() => {
 						triggerGacha();
@@ -357,3 +346,6 @@ export default function CalendarPage() {
 		</div>
 	);
 }
+
+// Helper for days of week
+const DAYS_OF_WEEK = ["日", "月", "火", "水", "木", "金", "土"];
