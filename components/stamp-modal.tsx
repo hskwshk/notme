@@ -1,21 +1,17 @@
-// components/character-modal.tsx
+// components/stamp-modal.tsx
 "use client";
 
 import Image from "next/image";
-import type { Character } from "@/types/character";
+import type { Stamp } from "@/types/character";
 
-type CharacterModalProps = {
+type StampModalProps = {
 	isOpen: boolean;
 	onClose: () => void;
-	character: Character | null;
+	stamp: Stamp | null;
 };
 
-export function CharacterModal({
-	isOpen,
-	onClose,
-	character,
-}: CharacterModalProps) {
-	if (!isOpen || !character) return null;
+export function StampModal({ isOpen, onClose, stamp }: StampModalProps) {
+	if (!isOpen || !stamp) return null;
 
 	return (
 		<>
@@ -48,17 +44,16 @@ export function CharacterModal({
 
 					{/* コンテンツ */}
 					<div className="flex flex-col items-center py-[50px] px-6 text-center">
-						<p className="mb-2">今日のあなたの人生は</p>
-						<h3 className="text-[32px] font-bold mb-4">{character.name}</h3>
+						<h3 className="text-xl font-bold mb-2">
+							『{stamp.stampName}』スタンプ
+						</h3>
+						<p className="text-2xl font-bold mb-4">GET!!!</p>
 						<Image
-							src={character.image}
-							alt={character.name}
+							src={stamp.image}
+							alt={`${stamp.stampName}スタンプ`}
 							width={213}
 							height={213}
-							className="mb-4"
 						/>
-						<p className="mb-2">目安：{character.timeGuide}</p>
-						<p>{character.description}</p>
 					</div>
 				</div>
 			</div>
