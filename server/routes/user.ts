@@ -25,12 +25,18 @@ const app = new Hono<HonoEnv>()
 		),
 		async (c) => {
 			const db = c.get("db");
+			const user = c.get("user");
 			const { q } = c.req.valid("query");
+
+			if (!user) {
+				return c.json({ error: "Unauthorized" }, 401);
+			}
 
 			if (!q) {
 				return c.json({ users: [] });
 			}
 
+			// Search users (exclude self)
 			const users = await db
 				.select({
 					id: userTable.id,
@@ -39,10 +45,46 @@ const app = new Hono<HonoEnv>()
 					currentStreak: userTable.currentStreak,
 				})
 				.from(userTable)
-				.where(or(like(userTable.name, `%${q}%`), eq(userTable.id, q)))
+				.where(
+					and(
+						or(like(userTable.name, `%${q}%`), eq(userTable.id, q)),
+						// Exclude self handled by filter next, but optimization:
+						// ne(userTable.id, user.id) // if imported 'ne'
+					),
+				)
 				.limit(20);
 
-			return c.json({ users });
+			const filteredUsers = users.filter((u) => u.id !== user.id);
+
+			if (filteredUsers.length === 0) {
+				return c.json({ users: [] });
+			}
+
+			// Check friendship status
+			// foundUserIds was unused, removed.
+
+			const friendships = await db.query.friendship.findMany({
+				where: or(
+					and(eq(friendship.userId, user.id)),
+					and(eq(friendship.friendId, user.id)),
+				),
+			});
+
+			// Map status
+			const usersWithStatus = filteredUsers.map((u) => {
+				const rel = friendships.find(
+					(f) =>
+						(f.userId === user.id && f.friendId === u.id) ||
+						(f.userId === u.id && f.friendId === user.id),
+				);
+				return {
+					...u,
+					friendshipStatus: rel ? rel.status : "none", // 'pending' or 'accepted' or 'none'
+					isSender: rel ? rel.userId === user.id : false, // To distinguish if I sent the request
+				};
+			});
+
+			return c.json({ users: usersWithStatus });
 		},
 	)
 	.post("/:id/friend-request", async (c) => {

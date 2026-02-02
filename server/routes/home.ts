@@ -8,7 +8,6 @@ import {
 	user as userTable,
 } from "@/db/schema";
 import { calculateStampFromLog } from "@/server/objects/stamp";
-import { calculateCurrentStreak } from "@/server/services/streak";
 import type { HonoEnv } from "@/server/types";
 
 const homeRoute = new Hono<HonoEnv>()
@@ -21,6 +20,7 @@ const homeRoute = new Hono<HonoEnv>()
 		}
 
 		// 1. Fetch User Extended Details
+		// We need to fetch fresh user data as session might be stale for new fields
 		const userData = await db.query.user.findFirst({
 			where: eq(userTable.id, user.id),
 			columns: {
@@ -79,48 +79,11 @@ const homeRoute = new Hono<HonoEnv>()
 			};
 		}
 
-		// 4. Streak Calculation
-		// Recalculate based on history
-		const oneYearAgo = new Date();
-		oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-		const oneYearAgoStr = oneYearAgo.toISOString().split("T")[0];
-
-		const logsForStreak = await db
-			.select({ date: activityLog.date })
-			.from(activityLog)
-			.where(
-				and(
-					eq(activityLog.userId, user.id),
-					gte(activityLog.date, oneYearAgoStr),
-				),
-			);
-
-		const distinctDates = Array.from(new Set(logsForStreak.map((l) => l.date)));
-		const newStreak = calculateCurrentStreak(distinctDates);
-
-		// Update User if streak changed or max streak improved
-		if (
-			newStreak !== userData.currentStreak ||
-			newStreak > userData.maxStreak
-		) {
-			await db
-				.update(userTable)
-				.set({
-					currentStreak: newStreak,
-					maxStreak: Math.max(newStreak, userData.maxStreak),
-				})
-				.where(eq(userTable.id, user.id));
-
-			// Update local userData for response
-			userData.currentStreak = newStreak;
-			userData.maxStreak = Math.max(newStreak, userData.maxStreak);
-		}
-
 		// Stamp Modal Logic
 		const shouldShowStampModal = !currentLog.isStampViewed;
 		const stampData = calculateStampFromLog(currentLog.durationMinutes);
 
-		// 5. Graph Data
+		// 4. Graph Data (From dev branch logic)
 		// - "Max/Month": The single highest duration in the last 30 days (for Y-axis scaling)
 		// - Last 5 days daily data (for the graph itself)
 
@@ -175,7 +138,7 @@ const homeRoute = new Hono<HonoEnv>()
 			isMostEffort: maxIn5Days > 0 && g.minutes === maxIn5Days,
 		}));
 
-		// 6. Daily Quote
+		// 5. Daily Quote
 		const quote = await db.query.dailyQuote.findFirst();
 
 		return c.json({
@@ -214,10 +177,7 @@ const homeRoute = new Hono<HonoEnv>()
 							),
 						)
 				).map(async (f) => {
-					// Determines the OTHER user's ID
 					const friendUserId = f.userId === user.id ? f.friendId : f.userId;
-
-					// Fetch Friend Profile
 					const friendProfile = await db.query.user.findFirst({
 						where: eq(userTable.id, friendUserId),
 						columns: {
@@ -233,7 +193,6 @@ const homeRoute = new Hono<HonoEnv>()
 
 					if (!friendProfile) return null;
 
-					// Fetch Friend's Today Log
 					const friendTodayLog = await db.query.activityLog.findFirst({
 						where: and(
 							eq(activityLog.userId, friendUserId),
@@ -241,21 +200,17 @@ const homeRoute = new Hono<HonoEnv>()
 						),
 					});
 
-					// Fetch Friend's Recent Logs (for graph)
-					// Reusing logic: last 5 days
 					const friendRecentLogs = await db
 						.select()
 						.from(activityLog)
 						.where(
 							and(
 								eq(activityLog.userId, friendUserId),
-								gte(activityLog.date, thirtyDaysAgoStr), // fetching enough for graph
+								gte(activityLog.date, thirtyDaysAgoStr),
 							),
 						);
 
 					const friendGraphData = [];
-					// Max for graph scaling (optional, UI might use fixed or relative)
-					// Just returning the data points
 					for (let i = 4; i >= 0; i--) {
 						const d = new Date();
 						d.setDate(d.getDate() - i);
@@ -270,7 +225,6 @@ const homeRoute = new Hono<HonoEnv>()
 							label,
 							minutes: log?.durationMinutes || 0,
 							type: "daily",
-							isMostEffort: false,
 						});
 					}
 
@@ -288,7 +242,7 @@ const homeRoute = new Hono<HonoEnv>()
 							maxExerciseMinutes: friendProfile.maxMinutes,
 							graphData: friendGraphData,
 						},
-						quote: quote ? { text: quote.content } : null, // Reusing system quote
+						quote: quote ? { text: quote.content } : null,
 					};
 				}),
 			).then((list) => list.filter((f) => f !== null)),

@@ -23,6 +23,7 @@ interface HomeData {
 		maxStreak: number;
 		todayExerciseMinutes: number;
 		maxExerciseMinutes: number;
+		monthMaxMinutes: number;
 		graphData: {
 			label: string;
 			minutes: number;
@@ -65,8 +66,7 @@ export default function Home() {
 			if (res.ok) {
 				const json = await res.json();
 				if ("error" in json) return;
-				// cast to HomeData (ignoring potential extra stampModal field from API for now)
-				setData(json as unknown as HomeData);
+				setData(json as HomeData);
 			} else if (res.status === 401) {
 				// If unauthorized (e.g. invalid session after DB reset), redirect to login
 				// In a real app we might use router.push, but window.location ensures full reload/clean slate
@@ -106,6 +106,11 @@ export default function Home() {
 						graphData={data.stats.graphData}
 						quote={data.dailyQuote?.text ?? null}
 					/>
+
+					{/* Friends Section Header */}
+					<div className="flex items-center justify-between mx-4 mt-2">
+						<h2 className="font-bold text-lg">友達</h2>
+					</div>
 
 					{/* Friends Feed */}
 					{data.friends?.map((friend, i) => (
