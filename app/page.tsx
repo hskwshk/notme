@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BottomNav } from "@/components/bottom-nav";
 import { DailyGoalManager } from "@/components/daily-goal-manager";
 import { HomeHeader } from "@/components/home/home-header";
 import { StatsCard } from "@/components/home/stats-card";
@@ -85,9 +84,6 @@ export default function Home() {
 
 					{/* Placeholder for other users/friends list if needed */}
 				</main>
-
-				{/* Bottom Navigation */}
-				<BottomNav />
 			</div>
 		</div>
 	);
