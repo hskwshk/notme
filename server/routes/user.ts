@@ -1,5 +1,5 @@
 import { zValidator } from "@hono/zod-validator";
-import { and, eq, gte, like, or, sql } from "drizzle-orm";
+import { and, eq, gte, ilike, or, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { HonoEnv } from "@/server/types";
@@ -47,9 +47,11 @@ const app = new Hono<HonoEnv>()
 				.from(userTable)
 				.where(
 					and(
-						or(like(userTable.name, `%${q}%`), eq(userTable.id, q)),
-						// Exclude self handled by filter next, but optimization:
-						// ne(userTable.id, user.id) // if imported 'ne'
+						or(
+							ilike(userTable.name, `%${q}%`),
+							ilike(userTable.username, `%${q}%`),
+							eq(userTable.id, q),
+						),
 					),
 				)
 				.limit(20);
@@ -136,6 +138,28 @@ const app = new Hono<HonoEnv>()
 		});
 
 		return c.json({ success: true, status: "pending" });
+	})
+	.delete("/:id/friend-request", async (c) => {
+		const db = c.get("db");
+		const user = c.get("user");
+		const friendId = c.req.param("id");
+
+		if (!user) {
+			return c.json({ error: "Unauthorized" }, 401);
+		}
+
+		// Delete pending request where user is sender and friendId is recipient
+		await db
+			.delete(friendship)
+			.where(
+				and(
+					eq(friendship.userId, user.id),
+					eq(friendship.friendId, friendId),
+					eq(friendship.status, "pending"),
+				),
+			);
+
+		return c.json({ success: true });
 	});
 
 app.get("/me/friend-requests", async (c) => {
@@ -425,7 +449,7 @@ app
 		if (!sessionUser) return c.json({ error: "Unauthorized" }, 401);
 
 		const body = await c.req.parseBody();
-		const file = body["file"];
+		const file = body.file;
 
 		if (!file || !(file instanceof File)) {
 			return c.json({ error: "No file uploaded" }, 400);

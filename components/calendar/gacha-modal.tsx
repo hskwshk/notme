@@ -66,13 +66,14 @@ export function GachaModal({ isOpen, onClose, stamp }: GachaModalProps) {
 							</h2>
 
 							<div className="relative w-48 h-48 mx-auto mb-4">
+								{/* eslint-disable @next/next/no-img-element */}
 								{/* biome-ignore lint/performance/noImgElement: dynamic user content */}
-								{/* eslint-disable-next-line @next/next/no-img-element */}
 								<img
 									src={stamp.imageUrl}
 									alt={stamp.name}
 									className="w-full h-full object-contain"
 								/>
+								{/* eslint-enable @next/next/no-img-element */}
 							</div>
 						</>
 					)}

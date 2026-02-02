@@ -1,7 +1,6 @@
 "use client";
 
-import { ChevronLeft, Search, User, UserCheck, UserPlus } from "lucide-react";
-import Link from "next/link";
+import { ChevronLeft, Search, User, UserCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { apiClient } from "@/lib/api-client";
@@ -78,34 +77,78 @@ export default function FriendSearchPage() {
 		return () => clearTimeout(timer);
 	}, [query]);
 
+	// Sync history with search results
+	useEffect(() => {
+		if (results.length === 0) return;
+
+		let hasChanges = false;
+		const newHistory = history.map((hUser) => {
+			const matchingResult = results.find((r) => r.id === hUser.id);
+			if (matchingResult) {
+				if (
+					matchingResult.friendshipStatus !== hUser.friendshipStatus ||
+					matchingResult.isSender !== hUser.isSender
+				) {
+					hasChanges = true;
+					return matchingResult;
+				}
+			}
+			return hUser;
+		});
+
+		if (hasChanges) {
+			setHistory(newHistory);
+			localStorage.setItem("friend_search_history", JSON.stringify(newHistory));
+		}
+	}, [results, history]);
+
 	const handleFollow = async (user: SearchUser) => {
+		// Determine action: Request or Cancel
+		const isCancelling = user.friendshipStatus === "pending" && user.isSender;
+
+		if (user.friendshipStatus !== "none" && !isCancelling) {
+			return; // Can't interact with accepted or incoming pending here yet
+		}
+
 		// Optimistic update
 		const originalStatus = user.friendshipStatus;
 		const originalIsSender = user.isSender;
 
+		const targetStatus: "none" | "pending" = isCancelling ? "none" : "pending";
+		const targetIsSender = !isCancelling;
+
+		const updatedUser = {
+			...user,
+			friendshipStatus: targetStatus,
+			isSender: targetIsSender,
+		};
+
 		const updateList = (list: SearchUser[]) =>
 			list.map((u) => {
 				if (u.id === user.id) {
-					return { ...u, friendshipStatus: "pending" as const, isSender: true };
+					return updatedUser;
 				}
 				return u;
 			});
 
 		setResults(updateList(results));
-		setHistory(updateList(history));
 
-		// Add to history when interacting
-		addToHistory(user);
+		// Add to history when interacting - use updatedUser!
+		addToHistory(updatedUser);
 
 		try {
-			const res = await apiClient.api.users[":id"]["friend-request"].$post({
-				param: { id: user.id },
-			});
-			if (!res.ok) {
-				throw new Error("Failed to follow");
+			if (isCancelling) {
+				const res = await apiClient.api.users[":id"]["friend-request"].$delete({
+					param: { id: user.id },
+				});
+				if (!res.ok) throw new Error("Failed to cancel");
+			} else {
+				const res = await apiClient.api.users[":id"]["friend-request"].$post({
+					param: { id: user.id },
+				});
+				if (!res.ok) throw new Error("Failed to follow");
 			}
-			// Success
-		} catch (_) {
+		} catch {
 			// Revert
 			const revertList = (list: SearchUser[]) =>
 				list.map((u) => {
@@ -119,8 +162,21 @@ export default function FriendSearchPage() {
 					return u;
 				});
 			setResults(revertList(results));
+			// Sync history revert
 			setHistory(revertList(history));
-			alert("フォローに失敗しました");
+
+			const currentHistory = JSON.parse(
+				localStorage.getItem("friend_search_history") || "[]",
+			);
+			const revertedHistory = revertList(currentHistory);
+			localStorage.setItem(
+				"friend_search_history",
+				JSON.stringify(revertedHistory),
+			);
+
+			alert(
+				isCancelling ? "キャンセルに失敗しました" : "フォローに失敗しました",
+			);
 		}
 	};
 
@@ -150,13 +206,16 @@ export default function FriendSearchPage() {
 						{/* Avatar */}
 						<div className="h-12 w-12 rounded-full bg-slate-300 border-2 border-white/50 shrink-0 overflow-hidden">
 							{user.image ? (
-								// biome-ignore lint/performance/noImgElement: dynamic content
-								// eslint-disable-next-line @next/next/no-img-element
-								<img
-									src={user.image}
-									alt={user.name}
-									className="h-full w-full object-cover"
-								/>
+								<>
+									{/* eslint-disable @next/next/no-img-element */}
+									{/* biome-ignore lint/performance/noImgElement: dynamic content */}
+									<img
+										src={user.image}
+										alt={user.name}
+										className="h-full w-full object-cover"
+									/>
+									{/* eslint-enable @next/next/no-img-element */}
+								</>
 							) : (
 								<User className="h-full w-full p-2 text-white/50" />
 							)}
@@ -192,9 +251,19 @@ export default function FriendSearchPage() {
 								フォロー
 							</button>
 						) : user.friendshipStatus === "pending" ? (
-							<div className="bg-gray-400/80 text-white text-xs font-bold px-4 py-1.5 rounded-full flex items-center gap-1">
-								{user.isSender ? "申請中" : "承認待ち"}
-							</div>
+							user.isSender ? (
+								<button
+									type="button"
+									onClick={() => handleFollow(user)}
+									className="bg-gray-400/80 text-white text-xs font-bold px-4 py-1.5 rounded-full flex items-center gap-1 active:opacity-80 transition-opacity"
+								>
+									申請中
+								</button>
+							) : (
+								<div className="bg-gray-400/80 text-white text-xs font-bold px-4 py-1.5 rounded-full flex items-center gap-1">
+									承認待ち
+								</div>
+							)
 						) : (
 							<div className="bg-green-500/80 text-white text-xs font-bold px-4 py-1.5 rounded-full flex items-center gap-1">
 								<UserCheck className="w-3 h-3" /> 友達
