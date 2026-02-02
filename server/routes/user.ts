@@ -2,7 +2,6 @@ import { zValidator } from "@hono/zod-validator";
 import { and, eq, gte, like, or, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
-import { auth } from "@/lib/auth";
 import type { HonoEnv } from "@/server/types";
 import {
 	activityLog,
@@ -426,7 +425,11 @@ app
 						"Only letters, numbers and underscores allowed",
 					)
 					.optional(),
-				password: z.string().min(8).optional(),
+				password: z
+					.string()
+					.min(8)
+					.regex(/^[a-zA-Z0-9]+$/, "Password must be alphanumeric")
+					.optional(),
 				characterName: z.string().optional(),
 			}),
 		),
