@@ -1,4 +1,3 @@
-// app/notice/page.tsx
 "use client";
 
 // import { group } from "console";
