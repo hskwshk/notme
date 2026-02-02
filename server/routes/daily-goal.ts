@@ -44,23 +44,35 @@ const dailyGoalRoute = new Hono<HonoEnv>()
 		// Assign a random goal
 		const allGoals = await db.select().from(dailyGoal);
 
-		if (allGoals.length === 0) {
-			console.error("No daily goals found in master table.");
-			return c.json({ error: "No goals available" }, 500);
-		}
+		let goalToAssign = null;
 
-		const randomGoal = allGoals[Math.floor(Math.random() * allGoals.length)];
+		if (allGoals.length === 0) {
+			// Fallback if no goals in DB (insert one)
+			const fallbackId = uuidv7();
+			goalToAssign = {
+				id: fallbackId,
+				title: "めっちゃ歩く人！",
+				imageUrl: "https://placehold.co/400x400/orange/white?text=Walk!", // Placeholder
+				description: "とにかく一杯歩く人！！！",
+				footer: "30分以上",
+			};
+
+			// Insert into master table to satisfy FK
+			await db.insert(dailyGoal).values(goalToAssign);
+		} else {
+			goalToAssign = allGoals[Math.floor(Math.random() * allGoals.length)];
+		}
 
 		await db.insert(userDailyGoal).values({
 			id: uuidv7(),
 			userId: user.id,
-			goalId: randomGoal.id,
+			goalId: goalToAssign.id,
 			date: today,
 			isViewed: false,
 		});
 
 		return c.json({
-			...randomGoal,
+			...goalToAssign,
 			isViewed: false,
 		});
 	})
