@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BottomNav } from "@/components/bottom-nav";
 import { DailyGoalManager } from "@/components/daily-goal-manager";
 import {
 	FriendActivityCard,
@@ -101,9 +100,6 @@ export default function Home() {
 						</div>
 					)}
 				</main>
-
-				{/* Bottom Navigation */}
-				<BottomNav />
 			</div>
 		</div>
 	);
