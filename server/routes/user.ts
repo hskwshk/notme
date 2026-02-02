@@ -12,6 +12,7 @@ import {
 } from "../../db/schema";
 import { createFileRepository } from "../infrastructure/repositories/file";
 import { FileId } from "../objects/file";
+import { passwordSchema, usernameSchema } from "../objects/user";
 
 const app = new Hono<HonoEnv>()
 	.get(
@@ -417,19 +418,8 @@ app
 			"json",
 			z.object({
 				name: z.string().min(1).optional(),
-				username: z
-					.string()
-					.min(1)
-					.regex(
-						/^[a-zA-Z0-9_]+$/,
-						"Only letters, numbers and underscores allowed",
-					)
-					.optional(),
-				password: z
-					.string()
-					.min(8)
-					.regex(/^[a-zA-Z0-9]+$/, "Password must be alphanumeric")
-					.optional(),
+				username: usernameSchema.optional(),
+				password: passwordSchema.optional(),
 				characterName: z.string().optional(),
 			}),
 		),
