@@ -1,8 +1,5 @@
-// app/notice/page.tsx
 "use client";
 
-// import { group } from "console";
-// import Image from "next/image";
 import { Card } from "@/components/notice-card";
 import { Top } from "@/components/top";
 
