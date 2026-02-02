@@ -22,6 +22,7 @@ interface HomeData {
 		maxStreak: number;
 		todayExerciseMinutes: number;
 		maxExerciseMinutes: number;
+		monthMaxMinutes: number;
 		graphData: {
 			label: string;
 			minutes: number;
@@ -42,7 +43,8 @@ export default function Home() {
 			if (res.ok) {
 				const json = await res.json();
 				if ("error" in json) return;
-				setData(json as HomeData);
+				// cast to HomeData (ignoring potential extra stampModal field from API for now)
+				setData(json as unknown as HomeData);
 			} else if (res.status === 401) {
 				// If unauthorized (e.g. invalid session after DB reset), redirect to login
 				// In a real app we might use router.push, but window.location ensures full reload/clean slate
