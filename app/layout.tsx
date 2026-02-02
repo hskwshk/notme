@@ -26,11 +26,14 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="en">
-			<body
+			<body className={`${geistSans.variable} ${geistMono.variable}`}>
+				{/* <body
 				className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-zinc-50 text-zinc-900 antialiased`}
-			>
-				<SiteHeader />
-				<main className="mx-auto w-full max-w-5xl px-6 py-10">{children}</main>
+			> */}
+
+				{/* <SiteHeader /> */}
+				<main>{children}</main>
+				{/* <main className="mx-auto w-full max-w-5xl px-6 py-10">{children}</main> */}
 			</body>
 		</html>
 	);
