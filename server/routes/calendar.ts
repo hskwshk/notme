@@ -8,11 +8,15 @@ import {
 	userStamp,
 	user as userTable,
 } from "@/db/schema";
+import { calculateStampFromLog } from "@/server/objects/stamp";
 import type { HonoEnv } from "@/server/types";
 
 // Helper to calculate required missions for next level
 const getRequiredMissions = (level: number) => {
-	return level * 5;
+	if (level < 50) {
+		return 3 + Math.floor(level / 5);
+	}
+	return 13 + Math.floor((level - 50) / 10);
 };
 
 const calendarRoute = new Hono<HonoEnv>()
@@ -100,20 +104,7 @@ const calendarRoute = new Hono<HonoEnv>()
 			let stampData = null;
 
 			if (hasActivity) {
-				stampData = {
-					type: "default",
-					label: "記録あり",
-				};
-				if (dayLog.durationMinutes > 60) {
-					stampData.label = "めちゃ走った";
-					stampData.type = "hard";
-				} else if (dayLog.durationMinutes > 30) {
-					stampData.label = "走った";
-					stampData.type = "medium";
-				} else {
-					stampData.label = "運動した";
-					stampData.type = "light";
-				}
+				stampData = calculateStampFromLog(dayLog.durationMinutes);
 			}
 
 			log.push({

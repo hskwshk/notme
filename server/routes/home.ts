@@ -1,6 +1,9 @@
 import { and, eq, gte } from "drizzle-orm";
 import { Hono } from "hono";
+import { v4 as uuidv4 } from "uuid";
 import { activityLog, appNotification, user as userTable } from "@/db/schema";
+import { calculateStampFromLog } from "@/server/objects/stamp";
+import { calculateCurrentStreak } from "@/server/services/streak";
 import type { HonoEnv } from "@/server/types";
 
 const homeRoute = new Hono<HonoEnv>()
@@ -13,7 +16,6 @@ const homeRoute = new Hono<HonoEnv>()
 		}
 
 		// 1. Fetch User Extended Details
-		// We need to fetch fresh user data as session might be stale for new fields
 		const userData = await db.query.user.findFirst({
 			where: eq(userTable.id, user.id),
 			columns: {
@@ -38,7 +40,7 @@ const homeRoute = new Hono<HonoEnv>()
 			),
 		);
 
-		// 3. Activity Stats (Today)
+		// 3. Activity Stats (Today) & Stamp Logic
 		const today = new Date()
 			.toLocaleDateString("ja-JP", {
 				year: "numeric",
@@ -47,11 +49,73 @@ const homeRoute = new Hono<HonoEnv>()
 			})
 			.replaceAll("/", "-");
 
-		const todayLog = await db.query.activityLog.findFirst({
+		let currentLog = await db.query.activityLog.findFirst({
 			where: and(eq(activityLog.userId, user.id), eq(activityLog.date, today)),
 		});
 
-		// 4. Graph Data
+		if (!currentLog) {
+			// Auto-create log for stamp if not exists (login bonus)
+			const newLogId = uuidv4();
+			await db.insert(activityLog).values({
+				id: newLogId,
+				userId: user.id,
+				date: today,
+				durationMinutes: 0,
+				isStampViewed: false,
+			});
+			// Fetch again to be sure or construct object
+			currentLog = {
+				id: newLogId,
+				userId: user.id,
+				date: today,
+				durationMinutes: 0,
+				isStampViewed: false,
+				createdAt: new Date(),
+			};
+		}
+
+		// 4. Streak Calculation
+		// Recalculate based on history
+		const oneYearAgo = new Date();
+		oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+		const oneYearAgoStr = oneYearAgo.toISOString().split("T")[0];
+
+		const logsForStreak = await db
+			.select({ date: activityLog.date })
+			.from(activityLog)
+			.where(
+				and(
+					eq(activityLog.userId, user.id),
+					gte(activityLog.date, oneYearAgoStr),
+				),
+			);
+
+		const distinctDates = Array.from(new Set(logsForStreak.map((l) => l.date)));
+		const newStreak = calculateCurrentStreak(distinctDates);
+
+		// Update User if streak changed or max streak improved
+		if (
+			newStreak !== userData.currentStreak ||
+			newStreak > userData.maxStreak
+		) {
+			await db
+				.update(userTable)
+				.set({
+					currentStreak: newStreak,
+					maxStreak: Math.max(newStreak, userData.maxStreak),
+				})
+				.where(eq(userTable.id, user.id));
+
+			// Update local userData for response
+			userData.currentStreak = newStreak;
+			userData.maxStreak = Math.max(newStreak, userData.maxStreak);
+		}
+
+		// Stamp Modal Logic
+		const shouldShowStampModal = !currentLog.isStampViewed;
+		const stampData = calculateStampFromLog(currentLog.durationMinutes);
+
+		// 5. Graph Data
 		// - "Max/Month": The single highest duration in the last 30 days (for Y-axis scaling)
 		// - Last 5 days daily data (for the graph itself)
 
@@ -83,10 +147,6 @@ const homeRoute = new Hono<HonoEnv>()
 			d.setDate(d.getDate() - i);
 			const dateStr = d.toISOString().split("T")[0];
 			// If i == 0 it's today, i == 1 it's yesterday, etc.
-			// Label logic can be simple (or based on design requirements).
-			// For now let's use "Today" for 0, "Yesterday" for 1, and formatted date or simple "N日前" for others.
-			// Current requirement didn't specify exact labels for 2-4 days ago, so let's stick to simple relative or date.
-			// Actually the previous code used "3日前", "昨日", "今日". Let's use "N日前" for > 1.
 			let label = "";
 			if (i === 0) label = "今日";
 			else if (i === 1) label = "昨日";
@@ -97,12 +157,10 @@ const homeRoute = new Hono<HonoEnv>()
 				date: dateStr,
 				label,
 				minutes: log?.durationMinutes || 0,
-				// type: "daily" // We can remove 'type' if it's all daily now, or keep it.
 			});
 		}
 
 		// Find the max minutes within these 5 days to highlight
-		// If all are 0, maybe no highlight? or just highlight one? Let's highlight the first max found.
 		const maxIn5Days = Math.max(...graphDataRaw.map((g) => g.minutes));
 
 		const graphData = graphDataRaw.map((g) => ({
@@ -112,8 +170,7 @@ const homeRoute = new Hono<HonoEnv>()
 			isMostEffort: maxIn5Days > 0 && g.minutes === maxIn5Days,
 		}));
 
-		// 5. Daily Quote
-		// Just pick one randomly or the latest
+		// 6. Daily Quote
 		const quote = await db.query.dailyQuote.findFirst();
 
 		return c.json({
@@ -127,17 +184,15 @@ const homeRoute = new Hono<HonoEnv>()
 			stats: {
 				currentStreak: userData.currentStreak,
 				maxStreak: userData.maxStreak,
-				todayExerciseMinutes: todayLog?.durationMinutes || 0,
-				maxExerciseMinutes: userData.maxMinutes, // Keeping this as user lifetime max? Or replace?
-				// User asked for "Vertical axis max is max in past month".
-				// So let's provide monthMaxMinutes.
+				todayExerciseMinutes: currentLog.durationMinutes,
+				maxExerciseMinutes: userData.maxMinutes,
 				monthMaxMinutes: monthMaxMinutes,
 				graphData,
 			},
 			dailyQuote: quote ? { text: quote.content } : null,
 			stampModal: {
-				shouldShow: !!todayLog && !todayLog.isStampViewed,
-				stamp: null, // Placeholder logic: we could fetch the latest obtained stamp
+				shouldShow: shouldShowStampModal,
+				stamp: stampData,
 			},
 		});
 	})
@@ -157,7 +212,6 @@ const homeRoute = new Hono<HonoEnv>()
 			})
 			.replaceAll("/", "-");
 
-		// Mark today's log as viewed
 		await db
 			.update(activityLog)
 			.set({ isStampViewed: true })
