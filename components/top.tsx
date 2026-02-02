@@ -25,7 +25,7 @@ export function Top({ name, backType = "home" }: TopProps) {
 					<button
 						type="button"
 						onClick={handleBack}
-						className="text-[20px] w-10 h-10 flex items-center justify-center hover:bg-gray-100 rounded-full transition"
+						className="text-[20px] w-10 h-10 flex items-center justify-center ml-[20px]"
 						aria-label="戻る"
 					>
 						＜
