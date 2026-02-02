@@ -6,7 +6,7 @@ import { BottomNav } from "@/components/bottom-nav";
 import { Modal } from "@/components/character-modal";
 
 export default function Home() {
-	const [isOpen, setIsOpen] = useState(false);
+	const [isOpen, setIsOpen] = useState(true); // テスト用true
 
 	return (
 		<main className="my-[70px]">
@@ -14,13 +14,13 @@ export default function Home() {
 				<h1 className="text-[24px] text-center flex-1">ホーム</h1>
 			</header>
 
-			<button
+			{/* <button
 				type="button"
 				onClick={() => setIsOpen(true)}
 				className="bg-blue-500 text-white px-4 py-2 rounded"
 			>
 				モーダルを開く
-			</button>
+			</button> */}
 
 			<Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
 				<p className="mb-2">今日のあなたの人生は</p>
