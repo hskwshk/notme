@@ -25,7 +25,7 @@ export function Top({ name, backType = "home" }: TopProps) {
 					<button
 						type="button"
 						onClick={handleBack}
-						className="text-2xl w-10 h-10 flex items-center justify-center hover:bg-gray-100 rounded-full transition"
+						className="text-[20px] w-10 h-10 flex items-center justify-center hover:bg-gray-100 rounded-full transition"
 						aria-label="戻る"
 					>
 						＜
@@ -33,7 +33,7 @@ export function Top({ name, backType = "home" }: TopProps) {
 				)}
 			</div>
 
-			<h1 className="text-xl font-bold text-center flex-1">{name}</h1>
+			<h1 className="text-[24px] text-center flex-1">{name}</h1>
 
 			{/* 右側スペース確保（中央揃えのため） */}
 			<div className="w-10"></div>

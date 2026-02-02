@@ -1,8 +1,6 @@
-// app/notice/page.tsx
 "use client";
 
-// import { group } from "console";
-// import Image from "next/image";
+import { BottomNav } from "@/components/bottom-nav";
 import { Card } from "@/components/notice-card";
 import { Top } from "@/components/top";
 
@@ -61,10 +59,10 @@ const noticesByDate = [
 
 export default function Notice() {
 	return (
-		<main className="bg-[#F4F4F4]">
+		<main className="my-[70px]">
 			<Top name={pageName} />
 
-			<div>
+			<div className="flex flex-col items-center">
 				{noticesByDate.map((group) => (
 					<section key={group.date}>
 						<h2 className="mb-[23px] text-[20px] font-bold text-black">
@@ -83,6 +81,8 @@ export default function Notice() {
 					</section>
 				))}
 			</div>
+
+			<BottomNav />
 		</main>
 	);
 }

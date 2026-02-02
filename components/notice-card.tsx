@@ -1,5 +1,3 @@
-// import Image from "next/image";
-
 type CardProps = {
 	title: string;
 	description: string;
@@ -14,19 +12,9 @@ export function Card({ title, description, isUnread = false }: CardProps) {
 				<div className="absolute top-[18px] right-[30px] bg-[#FEE123] w-[11px] h-[11px] rounded-full"></div>
 			)}
 
-			<div className="flex justify-center items-center">
-				<div className="bg-[#999] min-w-[47px] min-h-[47px] mr-[25px]  rounded-[50px]">
-					{/* <Image
-            src="sample/sample_icon.svg"
-            alt="アイコン画像"
-            width={100}
-            height={100}
-          /> */}
-				</div>
-				<div>
-					<h3 className="font-bold">{title}</h3>
-					<p>{description}</p>
-				</div>
+			<div className="px-[10px] py-[5px]">
+				<h3 className="font-bold">{title}</h3>
+				<p>{description}</p>
 			</div>
 		</div>
 	);
