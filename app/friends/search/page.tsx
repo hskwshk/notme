@@ -215,7 +215,7 @@ export default function FriendSearchPage() {
 				<div className="relative flex items-center justify-center p-2 mb-2">
 					<button
 						type="button"
-						onClick={() => router.back()}
+						onClick={() => router.push("/")}
 						className="absolute left-0 p-2 text-gray-500"
 					>
 						<ChevronLeft className="h-6 w-6" />
