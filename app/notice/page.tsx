@@ -3,8 +3,6 @@
 
 // import { group } from "console";
 // import Image from "next/image";
-import { Card } from "@/components/notice-card";
-import { Top } from "@/components/top";
 
 // トップのテストデータ
 const pageName = "通知";
@@ -60,29 +58,12 @@ const noticesByDate = [
 ];
 
 export default function Notice() {
-	return (
-		<main className="bg-[#F4F4F4]">
-			<Top name={pageName} />
+	console.log("Notice Data:", noticesByDate);
 
-			<div>
-				{noticesByDate.map((group) => (
-					<section key={group.date}>
-						<h2 className="mb-[23px] text-[20px] font-bold text-black">
-							{group.date}
-						</h2>
-						<div>
-							{group.notices.map((notice) => (
-								<Card
-									key={notice.id}
-									title={notice.title}
-									description={notice.description}
-									isUnread={notice.isUnread}
-								/>
-							))}
-						</div>
-					</section>
-				))}
-			</div>
-		</main>
+	return (
+		<div>
+			<h1>{pageName}</h1>
+			<p>Check console for data.</p>
+		</div>
 	);
 }
