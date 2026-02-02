@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
-import { db } from "../db";
 import { userDailyGoal } from "../db/schema";
+import { db } from "../lib/db";
 
 async function resetDailyGoals() {
 	console.log("Resetting daily goals...");

@@ -1,6 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { BottomNav } from "@/components/bottom-nav";
+import { GachaModal } from "@/components/calendar/gacha-modal";
+import { LevelProgress } from "@/components/calendar/level-progress";
 import { apiClient } from "@/lib/api-client";
 
 interface CalendarData {
@@ -46,6 +50,23 @@ export default function CalendarPage() {
 		imageUrl: string;
 	} | null>(null);
 
+	// Gacha Logic
+	const triggerGacha = useCallback(async () => {
+		const res = await apiClient.api.calendar.gacha.$post();
+		if (res.ok) {
+			const json = await res.json();
+			if ("error" in json) {
+				// alert(json.error);
+				return;
+			}
+
+			if ("stamp" in json) {
+				setNewStamp(json.stamp);
+				setIsGachaOpen(true);
+			}
+		}
+	}, []);
+
 	useEffect(() => {
 		const fetchCalendar = async () => {
 			const year = currentDate.getFullYear().toString();
@@ -58,11 +79,24 @@ export default function CalendarPage() {
 			if (res.ok) {
 				const json = await res.json();
 				if ("error" in json) return;
-				setData(json as CalendarData);
+				const calendarData = json as CalendarData;
+				setData(calendarData);
+
+				// Auto-trigger Gacha if level up is ready
+				if (calendarData.isLevelUpReady) {
+					// Slight delay for UX
+					setTimeout(() => {
+						triggerGacha();
+					}, 500);
+				}
 			}
 		};
 		fetchCalendar();
-	}, [currentDate]);
+		// Adding triggerGacha to dependency array might cause loops if not careful,
+		// but since triggerGacha is stable (if check is strictly on isLevelUpReady from fresh fetch), it should be fine.
+		// To be strictly safe, we can suppress the dependency warning or wrap triggerGacha in useCallback.
+		// For now, let's just use it.
+	}, [currentDate, triggerGacha]);
 
 	const handlePrevMonth = () => {
 		setCurrentDate(
@@ -112,47 +146,207 @@ export default function CalendarPage() {
 		);
 
 	return (
-		<div>
-			<h1>Calendar Data</h1>
-			<div>
-				<button type="button" onClick={handlePrevMonth}>
-					Prev Month
-				</button>
-				<span>
-					{data.year}-{data.month}
-				</span>
-				<button type="button" onClick={handleNextMonth}>
-					Next Month
-				</button>
+		<div className="min-h-screen bg-[#F2F2F7] pb-32 font-sans text-slate-900">
+			{/* Header / Month Selector */}
+			<div className="pt-8 px-6 pb-2 flex items-center justify-between">
+				<div className="flex items-center gap-1">
+					<span className="text-3xl font-bold tracking-tight">
+						{data.month}月
+					</span>
+					<ChevronRight className="rotate-90 h-5 w-5 text-gray-400 mt-1" />
+				</div>
+
+				<div className="flex items-center gap-2">
+					{data.currentStreak > 0 && (
+						<div className="bg-sky-400 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm">
+							<span className="text-orange-300 text-sm">🔥</span>{" "}
+							{data.currentStreak}日継続中
+						</div>
+					)}
+				</div>
 			</div>
 
-			<div>
-				<h2>Actions</h2>
+			{/* Month Navigation (Invisible or swipe, but adding buttons for usability now) */}
+			{/* Ideally swipe, but adding simple arrows for now */}
+			<div className="px-6 flex justify-end gap-4 mb-4">
 				<button
 					type="button"
-					onClick={handleGachaDraw}
-					disabled={!data.isLevelUpReady}
+					onClick={handlePrevMonth}
+					className="p-2 bg-white rounded-full shadow-sm"
 				>
-					Draw Gacha
+					<ChevronLeft className="h-4 w-4" />
+				</button>
+				<button
+					type="button"
+					onClick={handleNextMonth}
+					className="p-2 bg-white rounded-full shadow-sm"
+				>
+					<ChevronRight className="h-4 w-4" />
 				</button>
 			</div>
 
-			{isGachaOpen && newStamp && (
-				<div
-					style={{ border: "1px solid black", padding: "10px", margin: "10px" }}
-				>
-					<h3>New Stamp!</h3>
-					<p>{newStamp.name}</p>
-					{/* biome-ignore lint/performance/noImgElement: dynamic user content */}
-					<img src={newStamp.imageUrl} alt={newStamp.name} width={100} />
-					<button type="button" onClick={handleGachaClose}>
-						Close
-					</button>
-				</div>
-			)}
+			{/* Calendar Grid */}
+			<div className="px-4">
+				<div className="border-2 border-slate-800 rounded-3xl p-5 bg-white relative overflow-hidden shadow-sm">
+					{/* Days Header */}
+					<div className="grid grid-cols-7 mb-4">
+						{DAYS_OF_WEEK.map((day, i) => (
+							<div
+								key={day}
+								className={`text-center text-sm font-bold ${i === 0 ? "text-red-500" : "text-slate-900"}`}
+							>
+								{day}
+							</div>
+						))}
+					</div>
 
-			{console.log("Calendar Data:", data)}
-			<p>Check console for data.</p>
+					{/* Days Cells */}
+					<div className="grid grid-cols-7 gap-y-6 gap-x-1">
+						{(() => {
+							const year = data.year;
+							const month = data.month;
+							const firstDayOfMonth = new Date(year, month - 1, 1);
+							const startDayOfWeek = firstDayOfMonth.getDay(); // 0 (Sun) - 6 (Sat)
+
+							const prevMonthLastDate = new Date(year, month - 1, 0).getDate();
+							const daysInMonth = new Date(year, month, 0).getDate();
+
+							const cells = [];
+
+							// Previous Month Filler
+							for (let i = 0; i < startDayOfWeek; i++) {
+								const dayNum = prevMonthLastDate - startDayOfWeek + 1 + i;
+								cells.push(
+									<div
+										key={`prev-${dayNum}`}
+										className="flex flex-col items-center justify-start gap-1 h-16 opacity-30"
+									>
+										<span className="text-xl font-bold text-slate-400">
+											{dayNum}
+										</span>
+										<div className="w-8 h-8 rounded-full bg-slate-300" />
+									</div>,
+								);
+							}
+
+							// Current Month
+							for (let d = 1; d <= daysInMonth; d++) {
+								const dayData = data.days.find((day) => day.day === d);
+								const isSunday = new Date(year, month - 1, d).getDay() === 0;
+								const isHoliday = month === 4 && d === 29; // Demo: Showa Day
+
+								const dayLabelColor =
+									isSunday || isHoliday ? "text-red-500" : "text-slate-900";
+
+								cells.push(
+									<div
+										key={`curr-${d}`}
+										className="flex flex-col items-center justify-start gap-1 h-16 relative group"
+									>
+										{/* Day Number */}
+										<span className={`text-xl font-bold ${dayLabelColor} z-10`}>
+											{d}
+										</span>
+
+										{/* Circle Placeholder */}
+										<div className="w-8 h-8 rounded-full bg-slate-300 absolute top-8" />
+
+										{/* Stamp Overlay */}
+										{dayData?.stamp && (
+											<div className="absolute top-4 w-14 h-14 z-20 transform -rotate-6 hover:scale-110 transition-transform">
+												{/* eslint-disable @next/next/no-img-element */}
+												{/* biome-ignore lint/performance/noImgElement: dynamic user content */}
+												<img
+													src={dayData.stamp.imageUrl}
+													alt={dayData.stamp.name}
+													className="w-full h-full object-contain drop-shadow-md"
+												/>
+												{/* eslint-enable @next/next/no-img-element */}
+											</div>
+										)}
+									</div>,
+								);
+							}
+
+							// Next Month Filler (to complete the last row)
+							const totalCells = cells.length;
+							const remaining = 7 - (totalCells % 7);
+							if (remaining < 7) {
+								for (let i = 1; i <= remaining; i++) {
+									cells.push(
+										<div
+											key={`next-${i}`}
+											className="flex flex-col items-center justify-start gap-1 h-16 opacity-30"
+										>
+											<span className="text-xl font-bold text-slate-400">
+												{i}
+											</span>
+											<div className="w-8 h-8 rounded-full bg-slate-300" />
+										</div>,
+									);
+								}
+							}
+
+							return cells;
+						})()}
+					</div>
+				</div>
+			</div>
+
+			{/* Gamification / Level Section */}
+			<div className="mx-4 mt-4 space-y-4">
+				<LevelProgress
+					level={data.level}
+					progress={data.missionProgress}
+					isLevelUpReady={data.isLevelUpReady}
+					onGachaClick={handleGachaDraw}
+				/>
+
+				{/* Stats Row - Consolidated into one card */}
+				<div className="bg-gradient-to-r from-sky-400 to-cyan-300 text-white rounded-3xl p-5 shadow-md flex justify-between items-center text-center">
+					<div className="flex-1">
+						<div className="text-[10px] font-medium opacity-90 mb-1 flex items-center justify-center gap-1">
+							<span className="text-orange-300">🔥</span> 最大継続日数
+						</div>
+						<div className="text-xl font-bold">
+							{data.stats.maxStreak}
+							<span className="text-xs font-normal ml-0.5 opacity-80">日</span>
+						</div>
+					</div>
+					<div className="w-px h-8 bg-white/30" />
+					<div className="flex-1">
+						<div className="text-[10px] font-medium opacity-90 mb-1">
+							合計スタンプ所持数
+						</div>
+						<div className="text-xl font-bold">
+							{data.stats.totalStamps}
+							<span className="text-xs font-normal ml-0.5 opacity-80">個</span>
+						</div>
+					</div>
+					<div className="w-px h-8 bg-white/30" />
+					<div className="flex-1">
+						<div className="text-[10px] font-medium opacity-90 mb-1">
+							合計運動時間
+						</div>
+						<div className="text-xl font-bold">
+							{data.stats.totalDuration}
+							<span className="text-xs font-normal ml-0.5 opacity-80">分</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			{/* Gacha Modal */}
+			<GachaModal
+				isOpen={isGachaOpen}
+				onClose={handleGachaClose}
+				stamp={newStamp}
+			/>
+
+			<BottomNav />
 		</div>
 	);
 }
+
+// Helper for days of week
+const DAYS_OF_WEEK = ["日", "月", "火", "水", "木", "金", "土"];

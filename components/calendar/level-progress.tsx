@@ -24,57 +24,58 @@ export function LevelProgress({
 	);
 
 	return (
-		<div className="bg-[#1C1C1E] text-white rounded-2xl p-4 shadow-lg flex items-center justify-between relative overflow-hidden">
-			{/* Background/Overlay logic can go here if needed */}
-
-			<div className="flex-1 z-10">
-				<div className="flex items-baseline gap-2 mb-1">
-					<span className="text-sm text-blue-400 font-bold">Lv.{level}</span>
+		<div className="bg-gradient-to-r from-sky-400 to-cyan-300 text-white rounded-3xl p-6 shadow-md flex items-center justify-between relative overflow-visible mt-6">
+			{/* Content */}
+			<div className="flex-1 z-10 pr-4">
+				<div className="flex items-baseline gap-2 mb-2">
+					<span className="text-sm font-bold opacity-90">Lv.{level}</span>
 				</div>
 
-				<div className="mb-2">
-					<p className="text-xs text-slate-400">
+				<div className="mb-3">
+					<p className="text-[10px] opacity-90">
 						レベルアップまで後
-						<span className="text-white font-bold mx-1">
+						<span className="font-bold mx-0.5 text-base">
 							{progress.remaining}
 						</span>
 						ミッション
 					</p>
 				</div>
 
-				<div className="h-3 w-full bg-slate-700 rounded-full overflow-hidden">
+				<div className="h-3 w-full bg-white/30 rounded-full overflow-hidden backdrop-blur-sm">
 					<div
-						className="h-full bg-gradient-to-r from-green-500 to-emerald-400 transition-all duration-500 ease-out"
+						className="h-full bg-lime-400 rounded-full transition-all duration-500 ease-out shadow-[0_0_10px_rgba(163,230,53,0.5)]"
 						style={{ width: `${percentage}%` }}
 					/>
 				</div>
 			</div>
 
-			<div className="ml-4 z-10">
+			{/* Gacha Button / Chest */}
+			<div className="z-10 flex-shrink-0 relative">
 				<button
 					type="button"
 					onClick={onGachaClick}
 					disabled={!isLevelUpReady}
 					className={`
-						relative flex items-center justify-center h-12 w-12 rounded-full 
-						transition-all duration-300
+						group relative flex items-center justify-center h-16 w-16 rounded-full border-4 border-yellow-300
+						transition-all duration-300 shadow-lg
 						${
 							isLevelUpReady
-								? "bg-yellow-500 hover:scale-105 animate-pulse cursor-pointer shadow-[0_0_15px_rgba(234,179,8,0.6)]"
-								: "bg-slate-700 opacity-50 cursor-not-allowed grayscale"
+								? "bg-yellow-500 hover:scale-105 animate-pulse cursor-pointer shadow-yellow-500/50"
+								: "bg-yellow-500/50 cursor-not-allowed grayscale-[0.5]"
 						}
 					`}
 				>
+					{/* Ring effect around the button */}
+					{isLevelUpReady && (
+						<div className="absolute inset-0 rounded-full border-2 border-white animate-ping opacity-75" />
+					)}
+
 					<Gift
-						className={`h-6 w-6 ${isLevelUpReady ? "text-white" : "text-slate-400"}`}
+						className={`h-8 w-8 text-white drop-shadow-md ${isLevelUpReady ? "animate-bounce" : ""}`}
+						strokeWidth={2.5}
 					/>
 				</button>
 			</div>
-
-			{/* Decorative background glow for chest area */}
-			{isLevelUpReady && (
-				<div className="absolute right-2 top-1/2 -translate-y-1/2 h-20 w-20 bg-yellow-500/10 blur-xl rounded-full" />
-			)}
 		</div>
 	);
 }

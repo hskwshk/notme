@@ -48,8 +48,7 @@ export default function Home() {
 			if (res.ok) {
 				const json = await res.json();
 				if ("error" in json) return;
-				// cast to HomeData (ignoring potential extra stampModal field from API for now)
-				setData(json as unknown as HomeData);
+				setData(json as HomeData);
 			} else if (res.status === 401) {
 				// If unauthorized (e.g. invalid session after DB reset), redirect to login
 				// In a real app we might use router.push, but window.location ensures full reload/clean slate
@@ -93,9 +92,9 @@ export default function Home() {
 					{/* Friends List */}
 					{data.friends?.length > 0 && (
 						<div className="space-y-4">
-							<h3 className="text-sm font-bold text-gray-500 px-4">
-								友達の活動
-							</h3>
+							<div className="flex items-center justify-between mx-4 mt-2">
+								<h2 className="font-bold text-lg">友達</h2>
+							</div>
 							{data.friends.map((friend) => (
 								<FriendActivityCard key={friend.user.id} friend={friend} />
 							))}

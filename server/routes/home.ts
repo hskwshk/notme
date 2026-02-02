@@ -1,9 +1,13 @@
-import { and, eq, gte } from "drizzle-orm";
+import { and, eq, gte, or } from "drizzle-orm";
 import { Hono } from "hono";
 import { v4 as uuidv4 } from "uuid";
-import { activityLog, appNotification, user as userTable } from "@/db/schema";
+import {
+	activityLog,
+	appNotification,
+	friendship,
+	user as userTable,
+} from "@/db/schema";
 import { calculateStampFromLog } from "@/server/objects/stamp";
-import { calculateCurrentStreak } from "@/server/services/streak";
 import type { HonoEnv } from "@/server/types";
 
 const homeRoute = new Hono<HonoEnv>()
@@ -16,6 +20,7 @@ const homeRoute = new Hono<HonoEnv>()
 		}
 
 		// 1. Fetch User Extended Details
+		// We need to fetch fresh user data as session might be stale for new fields
 		const userData = await db.query.user.findFirst({
 			where: eq(userTable.id, user.id),
 			columns: {
@@ -74,48 +79,11 @@ const homeRoute = new Hono<HonoEnv>()
 			};
 		}
 
-		// 4. Streak Calculation
-		// Recalculate based on history
-		const oneYearAgo = new Date();
-		oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-		const oneYearAgoStr = oneYearAgo.toISOString().split("T")[0];
-
-		const logsForStreak = await db
-			.select({ date: activityLog.date })
-			.from(activityLog)
-			.where(
-				and(
-					eq(activityLog.userId, user.id),
-					gte(activityLog.date, oneYearAgoStr),
-				),
-			);
-
-		const distinctDates = Array.from(new Set(logsForStreak.map((l) => l.date)));
-		const newStreak = calculateCurrentStreak(distinctDates);
-
-		// Update User if streak changed or max streak improved
-		if (
-			newStreak !== userData.currentStreak ||
-			newStreak > userData.maxStreak
-		) {
-			await db
-				.update(userTable)
-				.set({
-					currentStreak: newStreak,
-					maxStreak: Math.max(newStreak, userData.maxStreak),
-				})
-				.where(eq(userTable.id, user.id));
-
-			// Update local userData for response
-			userData.currentStreak = newStreak;
-			userData.maxStreak = Math.max(newStreak, userData.maxStreak);
-		}
-
 		// Stamp Modal Logic
 		const shouldShowStampModal = !currentLog.isStampViewed;
 		const stampData = calculateStampFromLog(currentLog.durationMinutes);
 
-		// 5. Graph Data
+		// 4. Graph Data (From dev branch logic)
 		// - "Max/Month": The single highest duration in the last 30 days (for Y-axis scaling)
 		// - Last 5 days daily data (for the graph itself)
 
@@ -170,7 +138,7 @@ const homeRoute = new Hono<HonoEnv>()
 			isMostEffort: maxIn5Days > 0 && g.minutes === maxIn5Days,
 		}));
 
-		// 6. Daily Quote
+		// 5. Daily Quote
 		const quote = await db.query.dailyQuote.findFirst();
 
 		return c.json({
@@ -194,6 +162,90 @@ const homeRoute = new Hono<HonoEnv>()
 				shouldShow: shouldShowStampModal,
 				stamp: stampData,
 			},
+			friends: await Promise.all(
+				(
+					await db
+						.select()
+						.from(friendship)
+						.where(
+							and(
+								or(
+									eq(friendship.userId, user.id),
+									eq(friendship.friendId, user.id),
+								),
+								eq(friendship.status, "accepted"),
+							),
+						)
+				).map(async (f) => {
+					const friendUserId = f.userId === user.id ? f.friendId : f.userId;
+					const friendProfile = await db.query.user.findFirst({
+						where: eq(userTable.id, friendUserId),
+						columns: {
+							name: true,
+							image: true,
+							characterName: true,
+							level: true,
+							currentStreak: true,
+							maxStreak: true,
+							maxMinutes: true,
+						},
+					});
+
+					if (!friendProfile) return null;
+
+					const friendTodayLog = await db.query.activityLog.findFirst({
+						where: and(
+							eq(activityLog.userId, friendUserId),
+							eq(activityLog.date, today),
+						),
+					});
+
+					const friendRecentLogs = await db
+						.select()
+						.from(activityLog)
+						.where(
+							and(
+								eq(activityLog.userId, friendUserId),
+								gte(activityLog.date, thirtyDaysAgoStr),
+							),
+						);
+
+					const friendGraphData = [];
+					for (let i = 4; i >= 0; i--) {
+						const d = new Date();
+						d.setDate(d.getDate() - i);
+						const dateStr = d.toISOString().split("T")[0];
+						let label = "";
+						if (i === 0) label = "今日";
+						else if (i === 1) label = "昨日";
+						else label = `${i}日前`;
+
+						const log = friendRecentLogs.find((l) => l.date === dateStr);
+						friendGraphData.push({
+							label,
+							minutes: log?.durationMinutes || 0,
+							type: "daily",
+						});
+					}
+
+					return {
+						user: {
+							name: friendProfile.name,
+							image: friendProfile.image,
+							characterName: friendProfile.characterName,
+							level: friendProfile.level,
+						},
+						stats: {
+							currentStreak: friendProfile.currentStreak,
+							maxStreak: friendProfile.maxStreak,
+							todayExerciseMinutes: friendTodayLog?.durationMinutes || 0,
+							maxExerciseMinutes: friendProfile.maxMinutes,
+							graphData: friendGraphData,
+						},
+						quote: quote ? { text: quote.content } : null,
+					};
+				}),
+			).then((list) => list.filter((f) => f !== null)),
 		});
 	})
 	.post("/stamp-seen", async (c) => {
