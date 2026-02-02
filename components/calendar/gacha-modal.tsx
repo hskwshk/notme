@@ -13,23 +13,16 @@ interface GachaModalProps {
 }
 
 export function GachaModal({ isOpen, onClose, stamp }: GachaModalProps) {
-	const [stage, setStage] = useState<"hidden" | "opening" | "revealed">(
-		"hidden",
-	);
+	const [showContent, setShowContent] = useState(false);
 
 	useEffect(() => {
 		if (isOpen) {
-			const startTimer = setTimeout(() => setStage("opening"), 0);
-			// "Tame" time (e.g., 2 seconds of shaking/loading)
-			const revealTimer = setTimeout(() => {
-				setStage("revealed");
-			}, 2000);
-			return () => {
-				clearTimeout(startTimer);
-				clearTimeout(revealTimer);
-			};
+			// Small delay to allow enter animation
+			const timer = setTimeout(() => setShowContent(true), 100);
+			return () => clearTimeout(timer);
 		}
-		const timer = setTimeout(() => setStage("hidden"), 0);
+		// Reset when closed
+		const timer = setTimeout(() => setShowContent(false), 0);
 		return () => clearTimeout(timer);
 	}, [isOpen]);
 
@@ -40,70 +33,48 @@ export function GachaModal({ isOpen, onClose, stamp }: GachaModalProps) {
 			{/* Backdrop */}
 			<button
 				type="button"
-				className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity cursor-default"
-				onClick={stage === "revealed" ? onClose : undefined}
-				onKeyDown={(e) => {
-					if ((e.key === "Enter" || e.key === " ") && stage === "revealed") {
-						onClose();
-					}
-				}}
+				className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity cursor-default w-full h-full border-none"
+				onClick={onClose}
+				onKeyDown={(e) => e.key === "Enter" && onClose()}
+				aria-label="Close modal"
 			/>
 
 			{/* Modal Content */}
 			<div
 				className={`
-				relative bg-[#FFFBEB] w-full max-w-sm rounded-[32px] p-8 text-center shadow-2xl
+				relative bg-[#FFFBEB] w-full max-w-xs rounded-3xl p-6 text-center shadow-2xl
 				transition-all duration-500 transform
-				${stage === "opening" ? "scale-90 opacity-100" : "scale-100 opacity-100"}
+				${showContent ? "scale-100 opacity-100 translate-y-0" : "scale-95 opacity-0 translate-y-10"}
 			`}
 			>
-				{/* Close Button (only after reveal) */}
-				{stage === "revealed" && (
-					<button
-						type="button"
-						onClick={onClose}
-						className="absolute top-4 left-4 p-2 text-slate-800 hover:bg-black/5 rounded-full transition-colors"
-					>
-						<X className="h-6 w-6" />
-					</button>
-				)}
+				{/* Close Button */}
+				<button
+					type="button"
+					onClick={onClose}
+					className="absolute top-4 left-4 p-2 text-slate-800 hover:bg-black/5 rounded-full transition-colors"
+				>
+					<X className="h-6 w-6" />
+				</button>
 
-				<div className="min-h-[300px] flex flex-col items-center justify-center">
-					{stage === "opening" && (
-						<div className="animate-bounce">
-							<div className="text-6xl mb-4 animate-spin-slow">📦</div>
-							<p className="text-xl font-bold text-slate-700 animate-pulse">
-								ガチャ中...
-							</p>
-						</div>
-					)}
-
-					{stage === "revealed" && stamp && (
-						<div className="animate-in fade-in zoom-in duration-500">
-							<h2 className="text-lg font-bold text-slate-900 mb-6">
+				<div className="flex flex-col items-center justify-center py-4">
+					{stamp && (
+						<>
+							<h2 className="text-lg font-bold text-slate-900 mb-8 whitespace-pre-line leading-relaxed">
 								『{stamp.name}』 スタンプ
 								<br />
 								GET!!!
 							</h2>
 
-							<div className="relative w-48 h-48 mx-auto mb-6">
-								{/* Placeholder for stamp image */}
-								{}
-								{/* biome-ignore lint/performance/noImgElement: decorative image without next/image config */}
+							<div className="relative w-48 h-48 mx-auto mb-4">
+								{/* biome-ignore lint/performance/noImgElement: dynamic user content */}
+								{/* eslint-disable-next-line @next/next/no-img-element */}
 								<img
 									src={stamp.imageUrl}
 									alt={stamp.name}
-									className="w-full h-full object-contain drop-shadow-lg"
+									className="w-full h-full object-contain"
 								/>
 							</div>
-
-							{/* Stamp mark decoration */}
-							<div className="absolute bottom-10 right-10 rotate-12 opacity-80">
-								<div className="border-4 border-red-500 text-red-500 font-bold text-xs p-1 rounded-sm">
-									済
-								</div>
-							</div>
-						</div>
+						</>
 					)}
 				</div>
 			</div>
