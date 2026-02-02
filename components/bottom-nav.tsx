@@ -8,7 +8,7 @@ export function BottomNav() {
 	const pathname = usePathname();
 
 	const navItems = [
-		{ label: "友達", icon: UserPlus, href: "/friends" },
+		{ label: "友達", icon: UserPlus, href: "/friends/search" },
 		{ label: "カレンダー", icon: CalendarDays, href: "/calendar" },
 		{ label: "ホーム", icon: Home, href: "/" },
 		{ label: "記録", icon: NotebookPen, href: "/record" },
