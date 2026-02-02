@@ -1,5 +1,6 @@
 "use client";
 
+import { BottomNav } from "@/components/bottom-nav";
 import { Card } from "@/components/notice-card";
 import { Top } from "@/components/top";
 
@@ -58,7 +59,7 @@ const noticesByDate = [
 
 export default function Notice() {
 	return (
-		<main className="mt-[50px]">
+		<main className="my-[70px]">
 			<Top name={pageName} />
 
 			<div className="flex flex-col items-center">
@@ -80,6 +81,8 @@ export default function Notice() {
 					</section>
 				))}
 			</div>
+
+			<BottomNav />
 		</main>
 	);
 }
