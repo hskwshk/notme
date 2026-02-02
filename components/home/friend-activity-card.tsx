@@ -1,6 +1,10 @@
-"use client";
-
-import { Flame, Maximize2, MoreHorizontal, MoveUpRight } from "lucide-react";
+import {
+	Flame,
+	Maximize2,
+	MoreHorizontal,
+	MoveUpRight,
+	User,
+} from "lucide-react";
 
 interface GraphPoint {
 	label: string;
@@ -8,8 +12,9 @@ interface GraphPoint {
 	type: string;
 }
 
-interface FriendData {
+export interface FriendData {
 	user: {
+		id: string;
 		name: string;
 		image: string | null;
 		characterName: string | null;
@@ -61,7 +66,9 @@ export function FriendActivityCard({ friend }: FriendActivityCardProps) {
 								{/* eslint-enable @next/next/no-img-element */}
 							</>
 						) : (
-							<div className="h-full w-full bg-gray-300" />
+							<div className="h-full w-full flex items-center justify-center bg-white/20">
+								<User className="h-6 w-6 text-gray-500" />
+							</div>
 						)}
 					</div>
 					{/* Name & Title */}
