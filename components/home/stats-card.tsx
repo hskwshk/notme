@@ -49,8 +49,8 @@ export function StatsCard({
 			<div className="absolute top-0 right-0 -mr-10 -mt-10 h-40 w-40 rounded-full bg-white/10 blur-3xl"></div>
 
 			{/* Expand Icon */}
-			<div className="absolute top-4 right-4">
-				<Maximize2 className="h-4 w-4 opacity-80" />
+			<div className="absolute top-7 right-4">
+				<Maximize2 className="size-[24px] opacity-80" />
 			</div>
 
 			{/* Header: Fire + Level */}
@@ -58,7 +58,7 @@ export function StatsCard({
 				<div className="relative flex items-center justify-center">
 					<Flame className="h-10 w-10 text-orange-600 fill-orange-500 drop-shadow-md" />{" "}
 					{/* Icon is customized to look 'hot' */}
-					<span className="absolute text-[10px] font-bold text-white pt-1">
+					<span className="absolute text-[20px] font-bold text-white pt-1">
 						{currentStreak}
 					</span>
 				</div>
@@ -95,22 +95,16 @@ export function StatsCard({
 				{/* Stats Text */}
 				<div className="flex-1 space-y-1 py-1 text-right">
 					<div className="flex items-center justify-end gap-1">
-						<span className="text-xs font-medium opacity-90">
-							本日の運動時間 :
-						</span>
+						<span className="font-bold opacity-90">本日の運動時間 :</span>
 						<span className="text-sm font-bold">{todayMinutes}分</span>
 					</div>
 					<div className="flex items-center justify-end gap-1">
-						<span className="text-xs font-medium opacity-90">
-							最大連続日数 :
-						</span>
+						<span className="font-bold opacity-90">最大連続日数 :</span>
 						<span className="text-sm font-bold">{maxStreak}日</span>
 						<MoveUpRight className="h-3 w-3 text-yellow-300" />
 					</div>
 					<div className="flex items-center justify-end gap-1">
-						<span className="text-xs font-medium opacity-90">
-							最大運動時間 :
-						</span>
+						<span className="font-bold opacity-90">最大運動時間 :</span>
 						<span className="text-sm font-bold">{maxMinutes}分</span>
 					</div>
 				</div>
@@ -118,8 +112,8 @@ export function StatsCard({
 
 			{/* Quote Footer */}
 			<div className="border-t border-white/20 pt-3">
-				<p className="font-bold text-sm mb-1">[今日の一言]</p>
-				<p className="text-xs font-medium opacity-90 leading-relaxed">
+				<p className="font-bold text-[20px] mb-1">[今日の一言]</p>
+				<p className="font-medium opacity-90 leading-relaxed">
 					{quote || "運動せざる者、健康得るべからず。"}
 				</p>
 			</div>

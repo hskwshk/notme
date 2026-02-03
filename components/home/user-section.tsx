@@ -32,10 +32,8 @@ export function UserSection({
 					)}
 				</div>
 				<div>
-					<h2 className="text-sm font-bold text-gray-900">{name}</h2>
-					<p className="text-xs text-gray-500">
-						{characterName || "なりきったキャラ"}
-					</p>
+					<h2 className="font-bold text-gray-900">{name}</h2>
+					<p className="text-gray-500">{characterName || "なりきったキャラ"}</p>
 				</div>
 			</div>
 			<button type="button" className="text-gray-500">
