@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { config } from "dotenv";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
@@ -33,7 +34,7 @@ async function runTest() {
 	console.log("Setting up test data...");
 
 	// 1. Ensure User
-	let user = await db.query.user.findFirst();
+	let user: any = await db.query.user.findFirst();
 	if (!user) {
 		user = {
 			id: uuidv4(),
@@ -49,8 +50,8 @@ async function runTest() {
 			totalDuration: 0,
 			image: null,
 			characterName: null,
-		};
-		await db.insert(schema.user).values(user);
+		} as any;
+		await db.insert(schema.user).values(user as any);
 		console.log("Created test user:", user.id);
 	} else {
 		console.log("Using existing user:", user.id);
