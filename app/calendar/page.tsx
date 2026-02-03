@@ -147,11 +147,12 @@ export default function CalendarPage() {
 
 	return (
 		<div className="min-h-screen bg-[#F2F2F7] pb-32 font-sans text-slate-900">
-			{/* Header / Month Selector */}
-			<div className="pt-8 pb-2 flex items-center justify-between">
+			{/* ヘッダー（月 / 継続記録） */}
+			<div className="pt-8 pb-[20px] flex items-center justify-between">
 				<div className="flex items-center gap-1">
-					<span className="text-3xl font-bold tracking-tight">
-						{data.month}月
+					<span className="text-[36px] font-bold tracking-tight">
+						{data.month}
+						<span className="text-[20px]">月</span>
 					</span>
 					<ChevronRight className="rotate-90 h-5 w-5 text-gray-400 mt-1" />
 				</div>
@@ -169,7 +170,7 @@ export default function CalendarPage() {
 			{/* Month Navigation (Invisible or swipe, but adding buttons for usability now) */}
 			{/* Ideally swipe, but adding simple arrows for now */}
 			{/* 横移動ボタン */}
-			<div className="flex justify-end gap-4 mb-4">
+			{/* <div className="flex justify-end gap-4 mb-4">
 				<button
 					type="button"
 					onClick={handlePrevMonth}
@@ -184,17 +185,23 @@ export default function CalendarPage() {
 				>
 					<ChevronRight className="h-4 w-4" />
 				</button>
-			</div>
+			</div> */}
 
 			{/* カレンダー */}
 			<div>
-				<div className="border-2 border-slate-800 rounded-3xl p-5 bg-white relative overflow-hidden shadow-sm">
+				<div className="border-2 border-slate-800 rounded-3xl py-4 px-1 bg-[#F1FAFF] relative overflow-hidden shadow-sm">
 					{/* 曜日 */}
 					<div className="grid grid-cols-7 mb-4">
 						{DAYS_OF_WEEK.map((day, i) => (
 							<div
 								key={day}
-								className={`text-center text-sm font-bold ${i === 0 ? "text-red-500" : "text-slate-900"}`}
+								className={`text-center font-bold ${
+									i === 0
+										? "text-red-500"
+										: i === 6
+											? "text-blue-500"
+											: "text-slate-900"
+								}`}
 							>
 								{day}
 							</div>
@@ -202,7 +209,7 @@ export default function CalendarPage() {
 					</div>
 
 					{/* 日付 */}
-					<div className="grid grid-cols-7 gap-y-6 gap-x-1">
+					<div className="grid grid-cols-7 gap-y-4 gap-x-1">
 						{(() => {
 							const year = data.year;
 							const month = data.month;
@@ -222,7 +229,7 @@ export default function CalendarPage() {
 										key={`prev-${dayNum}`}
 										className="flex flex-col items-center justify-start gap-1 h-16 opacity-30"
 									>
-										<span className="text-xl font-bold text-slate-400">
+										<span className="text-[20px] font-bold text-slate-400">
 											{dayNum}
 										</span>
 										<div className="w-8 h-8 rounded-full bg-slate-300" />
@@ -234,10 +241,16 @@ export default function CalendarPage() {
 							for (let d = 1; d <= daysInMonth; d++) {
 								const dayData = data.days.find((day) => day.day === d);
 								const isSunday = new Date(year, month - 1, d).getDay() === 0;
+								const isSaturday = new Date(year, month - 1, d).getDay() === 6;
 								const isHoliday = month === 4 && d === 29; // Demo: Showa Day
 
+								// 曜日の色分けロジック
 								const dayLabelColor =
-									isSunday || isHoliday ? "text-red-500" : "text-slate-900";
+									isSunday || isHoliday
+										? "text-red-500"
+										: isSaturday
+											? "text-blue-500"
+											: "text-slate-900";
 
 								cells.push(
 									<div
