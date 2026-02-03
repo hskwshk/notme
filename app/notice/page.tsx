@@ -61,30 +61,36 @@ export default function Notice() {
 	console.log("Notice Data:", noticesByDate);
 
 	return (
-		<main className="my-[70px]">
-			<Top name={pageName} />
+		<>
+			<main className="my-[70px]">
+				<Top name={pageName} />
 
-			<div className="flex flex-col items-center">
-				{noticesByDate.map((group) => (
-					<section key={group.date}>
-						<h2 className="mb-[23px] text-[20px] font-bold text-black">
-							{group.date}
-						</h2>
-						<div>
-							{group.notices.map((notice) => (
-								<Card
-									key={notice.id}
-									title={notice.title}
-									description={notice.description}
-									isUnread={notice.isUnread}
-								/>
-							))}
-						</div>
-					</section>
-				))}
+				<div className="flex flex-col items-center">
+					{noticesByDate.map((group) => (
+						<section key={group.date}>
+							<h2 className="mb-[23px] text-[20px] font-bold text-black">
+								{group.date}
+							</h2>
+							<div>
+								{group.notices.map((notice) => (
+									<Card
+										key={notice.id}
+										title={notice.title}
+										description={notice.description}
+										isUnread={notice.isUnread}
+									/>
+								))}
+							</div>
+						</section>
+					))}
+				</div>
+
+				<BottomNav />
+			</main>
+			<div>
+				<h1>{pageName}</h1>
+				<p>Check console for data.</p>
 			</div>
-
-			<BottomNav />
-		</main>
+		</>
 	);
 }
