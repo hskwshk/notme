@@ -148,7 +148,7 @@ export default function CalendarPage() {
 	return (
 		<div className="min-h-screen bg-[#F2F2F7] pb-32 font-sans text-slate-900">
 			{/* Header / Month Selector */}
-			<div className="pt-8 px-6 pb-2 flex items-center justify-between">
+			<div className="pt-8 pb-2 flex items-center justify-between">
 				<div className="flex items-center gap-1">
 					<span className="text-3xl font-bold tracking-tight">
 						{data.month}月
@@ -168,7 +168,8 @@ export default function CalendarPage() {
 
 			{/* Month Navigation (Invisible or swipe, but adding buttons for usability now) */}
 			{/* Ideally swipe, but adding simple arrows for now */}
-			<div className="px-6 flex justify-end gap-4 mb-4">
+			{/* 横移動ボタン */}
+			<div className="flex justify-end gap-4 mb-4">
 				<button
 					type="button"
 					onClick={handlePrevMonth}
@@ -185,10 +186,10 @@ export default function CalendarPage() {
 				</button>
 			</div>
 
-			{/* Calendar Grid */}
-			<div className="px-4">
+			{/* カレンダー */}
+			<div>
 				<div className="border-2 border-slate-800 rounded-3xl p-5 bg-white relative overflow-hidden shadow-sm">
-					{/* Days Header */}
+					{/* 曜日 */}
 					<div className="grid grid-cols-7 mb-4">
 						{DAYS_OF_WEEK.map((day, i) => (
 							<div
@@ -200,7 +201,7 @@ export default function CalendarPage() {
 						))}
 					</div>
 
-					{/* Days Cells */}
+					{/* 日付 */}
 					<div className="grid grid-cols-7 gap-y-6 gap-x-1">
 						{(() => {
 							const year = data.year;
@@ -293,8 +294,8 @@ export default function CalendarPage() {
 				</div>
 			</div>
 
-			{/* Gamification / Level Section */}
-			<div className="mx-4 mt-4 space-y-4">
+			{/* レベル/記録 */}
+			<div className="mt-4 space-y-4">
 				<LevelProgress
 					level={data.level}
 					progress={data.missionProgress}
