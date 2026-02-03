@@ -230,6 +230,7 @@ const homeRoute = new Hono<HonoEnv>()
 
 					return {
 						user: {
+							id: friendUserId,
 							name: friendProfile.name,
 							image: friendProfile.image,
 							characterName: friendProfile.characterName,

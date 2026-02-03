@@ -103,19 +103,33 @@ export default function FriendSearchPage() {
 	}, [results, history]);
 
 	const handleFollow = async (user: SearchUser) => {
-		// Determine action: Request or Cancel
+		// Determine action: Request, Cancel, or Unfriend
 		const isCancelling = user.friendshipStatus === "pending" && user.isSender;
+		const isUnfriending = user.friendshipStatus === "accepted";
 
-		if (user.friendshipStatus !== "none" && !isCancelling) {
-			return; // Can't interact with accepted or incoming pending here yet
+		if (user.friendshipStatus !== "none" && !isCancelling && !isUnfriending) {
+			return; // Incoming pending requests cannot be handled here yet
 		}
 
 		// Optimistic update
 		const originalStatus = user.friendshipStatus;
 		const originalIsSender = user.isSender;
 
-		const targetStatus: "none" | "pending" = isCancelling ? "none" : "pending";
-		const targetIsSender = !isCancelling;
+		// Logic:
+		// None -> Pending (Send Request)
+		// Pending -> None (Cancel Request)
+		// Accepted -> None (Unfriend)
+		let targetStatus: "none" | "pending" | "accepted" = "pending";
+		let targetIsSender = true;
+
+		if (isCancelling || isUnfriending) {
+			targetStatus = "none";
+			targetIsSender = false;
+		} else {
+			// Sending request
+			targetStatus = "pending";
+			targetIsSender = true;
+		}
 
 		const updatedUser = {
 			...user,
@@ -142,6 +156,11 @@ export default function FriendSearchPage() {
 					param: { id: user.id },
 				});
 				if (!res.ok) throw new Error("Failed to cancel");
+			} else if (isUnfriending) {
+				const res = await apiClient.api.users[":id"].friend.$delete({
+					param: { id: user.id },
+				});
+				if (!res.ok) throw new Error("Failed to unfriend");
 			} else {
 				const res = await apiClient.api.users[":id"]["friend-request"].$post({
 					param: { id: user.id },
@@ -174,9 +193,13 @@ export default function FriendSearchPage() {
 				JSON.stringify(revertedHistory),
 			);
 
-			alert(
-				isCancelling ? "キャンセルに失敗しました" : "フォローに失敗しました",
-			);
+			if (isUnfriending) {
+				alert("削除に失敗しました");
+			} else if (isCancelling) {
+				alert("キャンセルに失敗しました");
+			} else {
+				alert("フォローに失敗しました");
+			}
 		}
 	};
 
@@ -265,9 +288,13 @@ export default function FriendSearchPage() {
 								</div>
 							)
 						) : (
-							<div className="bg-green-500/80 text-white text-xs font-bold px-4 py-1.5 rounded-full flex items-center gap-1">
+							<button
+								type="button"
+								onClick={() => handleFollow(user)}
+								className="bg-green-500/80 text-white text-xs font-bold px-4 py-1.5 rounded-full flex items-center gap-1 active:opacity-80 transition-opacity"
+							>
 								<UserCheck className="w-3 h-3" /> 友達
-							</div>
+							</button>
 						)}
 					</div>
 				</div>

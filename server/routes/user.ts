@@ -236,6 +236,33 @@ app.delete("/friend-request/:requestId", async (c) => {
 	return c.json({ success: true });
 });
 
+app.delete("/:id/friend", async (c) => {
+	const db = c.get("db");
+	const user = c.get("user");
+	const friendId = c.req.param("id");
+
+	if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+	// Find and delete accepted friendship
+	const existingFriendship = await db.query.friendship.findFirst({
+		where: and(
+			or(
+				and(eq(friendship.userId, user.id), eq(friendship.friendId, friendId)),
+				and(eq(friendship.userId, friendId), eq(friendship.friendId, user.id)),
+			),
+			eq(friendship.status, "accepted"),
+		),
+	});
+
+	if (!existingFriendship) {
+		return c.json({ error: "Friendship not found" }, 404);
+	}
+
+	await db.delete(friendship).where(eq(friendship.id, existingFriendship.id));
+
+	return c.json({ success: true });
+});
+
 app.get("/me/friends", async (c) => {
 	const db = c.get("db");
 	const user = c.get("user");
