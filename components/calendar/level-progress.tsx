@@ -24,15 +24,15 @@ export function LevelProgress({
 	);
 
 	return (
-		<div className="bg-gradient-to-r from-sky-400 to-cyan-300 text-white rounded-3xl p-6 shadow-md flex items-center justify-between relative overflow-visible mt-6">
+		<div className="bg-gradient-to-r from-sky-400 to-cyan-300 text-white rounded-[15px] px-3 py-2 shadow-md flex items-center justify-between relative overflow-visible mt-6">
 			{/* Content */}
 			<div className="flex-1 z-10 pr-4">
-				<div className="flex items-baseline gap-2 mb-2">
-					<span className="text-sm font-bold opacity-90">Lv.{level}</span>
+				<div className="flex items-baseline gap-2 mb-1">
+					<span className="font-bold opacity-90">Lv.{level}</span>
 				</div>
 
-				<div className="mb-3">
-					<p className="text-[10px] opacity-90">
+				<div className="mb-1">
+					<p className="text-[12px] opacity-90">
 						レベルアップまで後
 						<span className="font-bold mx-0.5 text-base">
 							{progress.remaining}

@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { BottomNav } from "@/components/bottom-nav";
 import { GachaModal } from "@/components/calendar/gacha-modal";
@@ -158,12 +159,19 @@ export default function CalendarPage() {
 				</div>
 
 				<div className="flex items-center gap-2">
-					{data.currentStreak > 0 && (
+					{/* {data.currentStreak > 0 && (
 						<div className="bg-sky-400 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm">
 							<span className="text-orange-300 text-sm">🔥</span>{" "}
 							{data.currentStreak}日継続中
 						</div>
-					)}
+					)} */}
+					{/* テスト用継続日数 */}
+					<div className="bg-sky-400 text-white px-3 py-1.5 rounded-[10px] font-bold flex items-center gap-1 shadow-sm">
+						<span className="text-orange-300 text-sm">
+							<Image src="/sample/fire.png" alt="炎" width={15} height={15} />
+						</span>{" "}
+						{data.currentStreak}日継続中
+					</div>
 				</div>
 			</div>
 
@@ -189,7 +197,7 @@ export default function CalendarPage() {
 
 			{/* カレンダー */}
 			<div>
-				<div className="border-2 border-slate-800 rounded-3xl py-4 px-1 bg-[#F1FAFF] relative overflow-hidden shadow-sm">
+				<div className="border-1 border-slate-800 rounded-[15px] py-4 px-1 bg-[#F1FAFF] relative overflow-hidden shadow-sm">
 					{/* 曜日 */}
 					<div className="grid grid-cols-7 mb-4">
 						{DAYS_OF_WEEK.map((day, i) => (
@@ -316,33 +324,34 @@ export default function CalendarPage() {
 					onGachaClick={handleGachaDraw}
 				/>
 
-				{/* Stats Row - Consolidated into one card */}
-				<div className="bg-gradient-to-r from-sky-400 to-cyan-300 text-white rounded-3xl p-5 shadow-md flex justify-between items-center text-center">
+				{/* 統計カード */}
+				<div className="bg-gradient-to-r from-sky-400 to-cyan-300 text-white rounded-[15px] p-2 shadow-md flex justify-between items-center text-center">
 					<div className="flex-1">
-						<div className="text-[10px] font-medium opacity-90 mb-1 flex items-center justify-center gap-1">
-							<span className="text-orange-300">🔥</span> 最大継続日数
+						<div className="text-[12px] font-bold opacity-90 mb-1 flex items-center justify-center gap-1">
+							<span className="text-orange-300">
+								<Image src="/sample/fire.png" alt="炎" width={15} height={15} />
+							</span>{" "}
+							最大継続日数
 						</div>
-						<div className="text-xl font-bold">
+						<div className="font-bold">
 							{data.stats.maxStreak}
 							<span className="text-xs font-normal ml-0.5 opacity-80">日</span>
 						</div>
 					</div>
-					<div className="w-px h-8 bg-white/30" />
 					<div className="flex-1">
-						<div className="text-[10px] font-medium opacity-90 mb-1">
+						<div className="text-[12px] font-bold opacity-90 mb-1">
 							合計スタンプ所持数
 						</div>
-						<div className="text-xl font-bold">
+						<div className="font-bold">
 							{data.stats.totalStamps}
 							<span className="text-xs font-normal ml-0.5 opacity-80">個</span>
 						</div>
 					</div>
-					<div className="w-px h-8 bg-white/30" />
 					<div className="flex-1">
-						<div className="text-[10px] font-medium opacity-90 mb-1">
+						<div className="text-[12px] font-bold opacity-90 mb-1">
 							合計運動時間
 						</div>
-						<div className="text-xl font-bold">
+						<div className="font-bold">
 							{data.stats.totalDuration}
 							<span className="text-xs font-normal ml-0.5 opacity-80">分</span>
 						</div>
