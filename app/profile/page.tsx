@@ -312,7 +312,7 @@ export default function ProfilePage() {
 
 				<div className="text-center">
 					<Link
-						href="/profile/edit"
+						href="/profile/stamps/edit"
 						className="inline-block bg-blue-400/20 text-blue-500 text-xs font-bold px-6 py-2 rounded-full hover:bg-blue-400/30 transition-colors"
 					>
 						スタンプを変更する

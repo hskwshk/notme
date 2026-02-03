@@ -427,6 +427,26 @@ const app = new Hono<HonoEnv>()
 			favoriteStamps: favoriteStamps,
 		});
 	})
+	.get("/me/stamps", async (c) => {
+		const db = c.get("db");
+		const user = c.get("user");
+
+		if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+		const userStamps = await db
+			.select({
+				id: stamp.id,
+				name: stamp.name,
+				imageUrl: stamp.imageUrl,
+				isFavorite: userStamp.isFavorite,
+				favoriteOrder: userStamp.favoriteOrder,
+			})
+			.from(userStamp)
+			.innerJoin(stamp, eq(userStamp.stampId, stamp.id))
+			.where(eq(userStamp.userId, user.id));
+
+		return c.json({ stamps: userStamps });
+	})
 	.put(
 		"/me/profile/favorite-stamps",
 		zValidator(
