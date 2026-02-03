@@ -69,7 +69,7 @@ export default function Home() {
 			<DailyGoalManager />
 
 			{/* Main Content */}
-			<div className="max-w-md mx-auto min-h-screen relative">
+			<div className="mx-auto min-h-screen relative">
 				<HomeHeader hasUnreadNotifications={data.user.hasUnreadNotifications} />
 
 				<main className="space-y-6">

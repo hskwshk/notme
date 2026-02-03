@@ -43,7 +43,7 @@ export function StatsCard({
 
 	return (
 		<div
-			className={`mx-4 rounded-3xl p-5 text-white shadow-lg ${gradientClass} relative overflow-hidden`}
+			className={`rounded-3xl p-[12px] text-white shadow-lg ${gradientClass} relative overflow-hidden`}
 		>
 			{/* Background Texture/Shine */}
 			<div className="absolute top-0 right-0 -mr-10 -mt-10 h-40 w-40 rounded-full bg-white/10 blur-3xl"></div>
@@ -93,7 +93,7 @@ export function StatsCard({
 				</div>
 
 				{/* Stats Text */}
-				<div className="flex-1 space-y-1 py-1 text-right">
+				<div className="flex-1 space-y-1 py-1 text-left w-1/3">
 					<div className="flex items-center justify-end gap-1">
 						<span className="font-bold opacity-90">本日の運動時間 :</span>
 						<span className="text-sm font-bold">{todayMinutes}分</span>
@@ -111,7 +111,7 @@ export function StatsCard({
 			</div>
 
 			{/* Quote Footer */}
-			<div className="border-t border-white/20 pt-3">
+			<div className="pt-3">
 				<p className="font-bold text-[20px] mb-1">[今日の一言]</p>
 				<p className="font-medium opacity-90 leading-relaxed">
 					{quote || "運動せざる者、健康得るべからず。"}
