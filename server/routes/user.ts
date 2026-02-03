@@ -346,24 +346,35 @@ const app = new Hono<HonoEnv>()
 			.where(and(eq(userStamp.userId, user.id), eq(userStamp.isFavorite, true)))
 			.orderBy(userStamp.favoriteOrder);
 
-		// 3. Graph Data (Last 7 days)
+		// 3. Graph Data (Last 7 days) & Month Max (Last 30 days for scaling)
 		const today = new Date();
+		const thirtyDaysAgo = new Date();
+		thirtyDaysAgo.setDate(today.getDate() - 30);
+		const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split("T")[0];
+
 		const sevenDaysAgo = new Date();
 		sevenDaysAgo.setDate(today.getDate() - 6);
-		const sevenDaysAgoStr = sevenDaysAgo.toISOString().split("T")[0];
 
+		// Fetch logs for last 30 days to get max
 		const logs = await db
 			.select()
 			.from(activityLog)
 			.where(
 				and(
 					eq(activityLog.userId, user.id),
-					gte(activityLog.date, sevenDaysAgoStr),
+					gte(activityLog.date, thirtyDaysAgoStr),
 				),
 			);
 
+		// Calculate max minutes in last 30 days
+		const monthMaxMinutes = logs.reduce(
+			(max, log) => (log.durationMinutes > max ? log.durationMinutes : max),
+			0,
+		);
+
 		// Initialize 7 days array
 		const graph = [];
+		// Max within the 7 days (to highlight the bar)
 		let maxInWeek = 0;
 
 		for (let i = 0; i < 7; i++) {
@@ -393,6 +404,8 @@ const app = new Hono<HonoEnv>()
 			user: {
 				id: user.id,
 				name: user.name,
+
+				username: user.username,
 				image: user.image,
 				characterName: user.characterName,
 				level: user.level,
@@ -406,6 +419,7 @@ const app = new Hono<HonoEnv>()
 				followerCount: Number(followerCount?.count || 0),
 				requestCount: Number(requestCount?.count || 0),
 				totalStampCount: Number(totalStamps?.count || 0),
+				monthMaxMinutes: monthMaxMinutes,
 			},
 			graph: graphWithMax,
 			favoriteStamps: favoriteStamps,
