@@ -25,7 +25,7 @@ export function StatsCard({
 	maxStreak,
 	todayMinutes,
 	maxMinutes,
-	graphData,
+	// graphData,
 	quote,
 }: StatsCardProps) {
 	// Determine card gradient based on level (example logic)
@@ -40,7 +40,7 @@ export function StatsCard({
 	const gradientClass = getGradient(level);
 
 	// Find simple max for graph scaling
-	const maxValue = Math.max(...graphData.map((d) => d.minutes), 60); // Min 60 for scale
+	// const _maxValue = Math.max(...graphData.map((d) => d.minutes), 60); // Min 60 for scale
 
 	return (
 		<div
