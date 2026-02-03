@@ -17,10 +17,11 @@ const factory = () =>
 					client: new AwsClient({
 						service: "s3",
 						region: "auto",
-						accessKeyId: R2_ACCESS_KEY_ID,
-						secretAccessKey: R2_SECRET_ACCESS_KEY,
+						accessKeyId: R2_ACCESS_KEY_ID || process.env.R2_ACCESS_KEY_ID,
+						secretAccessKey:
+							R2_SECRET_ACCESS_KEY || process.env.R2_SECRET_ACCESS_KEY,
 					}),
-					baseUrl: R2_S3_URL,
+					baseUrl: R2_S3_URL || process.env.R2_S3_URL,
 				});
 
 				c.set("db", db);

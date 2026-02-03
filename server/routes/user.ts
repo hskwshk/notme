@@ -510,15 +510,29 @@ const app = new Hono<HonoEnv>()
 			expiresAt: null,
 		};
 
-		const uploaded = await fileRepository.saveBlobFile(blobFile);
-		const imageUrl = `${baseUrl}/${uploaded.bucket}/${uploaded.key}`;
+		try {
+			const uploaded = await fileRepository.saveBlobFile(blobFile);
+			const imageUrl =
+				!baseUrl || baseUrl.includes("barbar.foo")
+					? `/${uploaded.bucket}/${uploaded.key}`
+					: `${baseUrl}/${uploaded.bucket}/${uploaded.key}`;
 
-		await db
-			.update(userTable)
-			.set({ image: imageUrl })
-			.where(eq(userTable.id, sessionUser.id));
+			await db
+				.update(userTable)
+				.set({ image: imageUrl })
+				.where(eq(userTable.id, sessionUser.id));
 
-		return c.json({ url: imageUrl });
+			return c.json({ url: imageUrl });
+		} catch (error) {
+			console.error("Backend Upload Error:", error);
+			return c.json(
+				{
+					error: "Internal Server Error during file upload",
+					details: error instanceof Error ? error.message : String(error),
+				},
+				500,
+			);
+		}
 	})
 	.put(
 		"/me/profile",

@@ -132,9 +132,20 @@ export default function ProfileEditPage() {
 				const formData = new FormData();
 				formData.append("file", imageFile);
 				const uploadRes = await apiClient.api.users.me.profile.image.$post({
-					body: { file: imageFile },
+					form: { file: imageFile },
 				});
-				if (!uploadRes.ok) throw new Error("Failed to upload image");
+				if (!uploadRes.ok) {
+					const errorData = (await uploadRes.json()) as {
+						error: string;
+						details?: string;
+					};
+					console.error("Upload error:", errorData);
+					const errorMessage =
+						"error" in errorData
+							? `${errorData.error}${errorData.details ? `: ${errorData.details}` : ""}`
+							: "Failed to upload image";
+					throw new Error(errorMessage);
+				}
 			}
 
 			// 2. Update Profile
