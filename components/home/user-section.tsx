@@ -36,6 +36,7 @@ export function UserSection({
 					<p className="text-gray-500">{characterName || "なりきったキャラ"}</p>
 				</div>
 			</div>
+			{/* 拡張ボタン */}
 			<button type="button" className="text-gray-500 size-[40px]">
 				<MoreHorizontal className="h-6 w-6 text-center" />
 			</button>
