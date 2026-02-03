@@ -383,7 +383,7 @@ app
 		if (!sessionUser) return c.json({ error: "Unauthorized" }, 401);
 
 		const body = await c.req.parseBody();
-		const file = body["file"];
+		const file = body.file;
 
 		if (!file || !(file instanceof File)) {
 			return c.json({ error: "No file uploaded" }, 400);
