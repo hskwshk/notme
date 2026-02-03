@@ -1,5 +1,5 @@
 import { zValidator } from "@hono/zod-validator";
-import { and, eq, gte, like, or, sql } from "drizzle-orm";
+import { and, eq, gte, ilike, or, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { HonoEnv } from "@/server/types";
@@ -25,12 +25,18 @@ const app = new Hono<HonoEnv>()
 		),
 		async (c) => {
 			const db = c.get("db");
+			const user = c.get("user");
 			const { q } = c.req.valid("query");
+
+			if (!user) {
+				return c.json({ error: "Unauthorized" }, 401);
+			}
 
 			if (!q) {
 				return c.json({ users: [] });
 			}
 
+			// Search users (exclude self)
 			const users = await db
 				.select({
 					id: userTable.id,
@@ -39,10 +45,48 @@ const app = new Hono<HonoEnv>()
 					currentStreak: userTable.currentStreak,
 				})
 				.from(userTable)
-				.where(or(like(userTable.name, `%${q}%`), eq(userTable.id, q)))
+				.where(
+					and(
+						or(
+							ilike(userTable.name, `%${q}%`),
+							ilike(userTable.username, `%${q}%`),
+							eq(userTable.id, q),
+						),
+					),
+				)
 				.limit(20);
 
-			return c.json({ users });
+			const filteredUsers = users.filter((u) => u.id !== user.id);
+
+			if (filteredUsers.length === 0) {
+				return c.json({ users: [] });
+			}
+
+			// Check friendship status
+			// foundUserIds was unused, removed.
+
+			const friendships = await db.query.friendship.findMany({
+				where: or(
+					and(eq(friendship.userId, user.id)),
+					and(eq(friendship.friendId, user.id)),
+				),
+			});
+
+			// Map status
+			const usersWithStatus = filteredUsers.map((u) => {
+				const rel = friendships.find(
+					(f) =>
+						(f.userId === user.id && f.friendId === u.id) ||
+						(f.userId === u.id && f.friendId === user.id),
+				);
+				return {
+					...u,
+					friendshipStatus: rel ? rel.status : "none", // 'pending' or 'accepted' or 'none'
+					isSender: rel ? rel.userId === user.id : false, // To distinguish if I sent the request
+				};
+			});
+
+			return c.json({ users: usersWithStatus });
 		},
 	)
 	.post("/:id/friend-request", async (c) => {
@@ -94,110 +138,158 @@ const app = new Hono<HonoEnv>()
 		});
 
 		return c.json({ success: true, status: "pending" });
-	});
+	})
+	.delete("/:id/friend-request", async (c) => {
+		const db = c.get("db");
+		const user = c.get("user");
+		const friendId = c.req.param("id");
 
-app.get("/me/friend-requests", async (c) => {
-	const db = c.get("db");
-	const user = c.get("user");
-
-	if (!user) return c.json({ error: "Unauthorized" }, 401);
-
-	const requests = await db.query.friendship.findMany({
-		where: and(
-			eq(friendship.friendId, user.id),
-			eq(friendship.status, "pending"),
-		),
-		with: {
-			user: true, // The sender
-		},
-	});
-
-	return c.json({ requests });
-});
-
-app.post("/friend-request/:requestId/accept", async (c) => {
-	const db = c.get("db");
-	const user = c.get("user");
-	const requestId = c.req.param("requestId");
-
-	if (!user) return c.json({ error: "Unauthorized" }, 401);
-
-	// Verify request exists and is for me
-	const request = await db.query.friendship.findFirst({
-		where: and(
-			eq(friendship.id, requestId),
-			eq(friendship.friendId, user.id),
-			eq(friendship.status, "pending"),
-		),
-	});
-
-	if (!request) {
-		return c.json({ error: "Friend request not found" }, 404);
-	}
-
-	// Accept
-	await db
-		.update(friendship)
-		.set({ status: "accepted" })
-		.where(eq(friendship.id, requestId));
-
-	return c.json({ success: true });
-});
-
-app.delete("/friend-request/:requestId", async (c) => {
-	const db = c.get("db");
-	const user = c.get("user");
-	const requestId = c.req.param("requestId");
-
-	if (!user) return c.json({ error: "Unauthorized" }, 401);
-
-	// Verify request exists and involves me
-	const request = await db.query.friendship.findFirst({
-		where: eq(friendship.id, requestId),
-	});
-
-	if (!request) {
-		return c.json({ error: "Friend request not found" }, 404);
-	}
-
-	if (request.userId !== user.id && request.friendId !== user.id) {
-		return c.json({ error: "Unauthorized" }, 403);
-	}
-
-	// Delete
-	await db.delete(friendship).where(eq(friendship.id, requestId));
-
-	return c.json({ success: true });
-});
-
-app.get("/me/friends", async (c) => {
-	const db = c.get("db");
-	const user = c.get("user");
-
-	if (!user) return c.json({ error: "Unauthorized" }, 401);
-
-	const friendsRecords = await db.query.friendship.findMany({
-		where: and(
-			or(eq(friendship.userId, user.id), eq(friendship.friendId, user.id)),
-			eq(friendship.status, "accepted"),
-		),
-		with: {
-			user: true, // sender
-			friend: true, // recipient
-		},
-	});
-
-	const friends = friendsRecords.map((f) => {
-		if (f.userId === user.id) {
-			return f.friend;
+		if (!user) {
+			return c.json({ error: "Unauthorized" }, 401);
 		}
-		return f.user;
-	});
 
-	return c.json({ friends });
-});
+		// Delete pending request where user is sender and friendId is recipient
+		await db
+			.delete(friendship)
+			.where(
+				and(
+					eq(friendship.userId, user.id),
+					eq(friendship.friendId, friendId),
+					eq(friendship.status, "pending"),
+				),
+			);
 
-app
+		return c.json({ success: true });
+	})
+	.get("/me/friend-requests", async (c) => {
+		const db = c.get("db");
+		const user = c.get("user");
+
+		if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+		const requests = await db.query.friendship.findMany({
+			where: and(
+				eq(friendship.friendId, user.id),
+				eq(friendship.status, "pending"),
+			),
+			with: {
+				user: true, // The sender
+			},
+		});
+
+		return c.json({ requests });
+	})
+	.post("/friend-request/:requestId/accept", async (c) => {
+		const db = c.get("db");
+		const user = c.get("user");
+		const requestId = c.req.param("requestId");
+
+		if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+		// Verify request exists and is for me
+		const request = await db.query.friendship.findFirst({
+			where: and(
+				eq(friendship.id, requestId),
+				eq(friendship.friendId, user.id),
+				eq(friendship.status, "pending"),
+			),
+		});
+
+		if (!request) {
+			return c.json({ error: "Friend request not found" }, 404);
+		}
+
+		// Accept
+		await db
+			.update(friendship)
+			.set({ status: "accepted" })
+			.where(eq(friendship.id, requestId));
+
+		return c.json({ success: true });
+	})
+	.delete("/friend-request/:requestId", async (c) => {
+		const db = c.get("db");
+		const user = c.get("user");
+		const requestId = c.req.param("requestId");
+
+		if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+		// Verify request exists and involves me
+		const request = await db.query.friendship.findFirst({
+			where: eq(friendship.id, requestId),
+		});
+
+		if (!request) {
+			return c.json({ error: "Friend request not found" }, 404);
+		}
+
+		if (request.userId !== user.id && request.friendId !== user.id) {
+			return c.json({ error: "Unauthorized" }, 403);
+		}
+
+		// Delete
+		await db.delete(friendship).where(eq(friendship.id, requestId));
+
+		return c.json({ success: true });
+	})
+	.delete("/:id/friend", async (c) => {
+		const db = c.get("db");
+		const user = c.get("user");
+		const friendId = c.req.param("id");
+
+		if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+		// Find and delete accepted friendship
+		const existingFriendship = await db.query.friendship.findFirst({
+			where: and(
+				or(
+					and(
+						eq(friendship.userId, user.id),
+						eq(friendship.friendId, friendId),
+					),
+					and(
+						eq(friendship.userId, friendId),
+						eq(friendship.friendId, user.id),
+					),
+				),
+				eq(friendship.status, "accepted"),
+			),
+		});
+
+		if (!existingFriendship) {
+			return c.json({ error: "Friendship not found" }, 404);
+		}
+
+		await db.delete(friendship).where(eq(friendship.id, existingFriendship.id));
+
+		return c.json({ success: true });
+	})
+	.get("/me/friends", async (c) => {
+		const db = c.get("db");
+		const user = c.get("user");
+
+		if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+		const friendsRecords = await db.query.friendship.findMany({
+			where: and(
+				or(eq(friendship.userId, user.id), eq(friendship.friendId, user.id)),
+				eq(friendship.status, "accepted"),
+			),
+			with: {
+				user: true, // sender
+				friend: true, // recipient
+			},
+		});
+
+		const friends = friendsRecords.map((f) => {
+			if (f.userId === user.id) {
+				return f.friend;
+			}
+			return f.user;
+		});
+
+		return c.json({ friends });
+	})
 	.get("/me/profile", async (c) => {
 		const db = c.get("db");
 		const sessionUser = c.get("user");
@@ -254,24 +346,35 @@ app
 			.where(and(eq(userStamp.userId, user.id), eq(userStamp.isFavorite, true)))
 			.orderBy(userStamp.favoriteOrder);
 
-		// 3. Graph Data (Last 7 days)
+		// 3. Graph Data (Last 7 days) & Month Max (Last 30 days for scaling)
 		const today = new Date();
+		const thirtyDaysAgo = new Date();
+		thirtyDaysAgo.setDate(today.getDate() - 30);
+		const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split("T")[0];
+
 		const sevenDaysAgo = new Date();
 		sevenDaysAgo.setDate(today.getDate() - 6);
-		const sevenDaysAgoStr = sevenDaysAgo.toISOString().split("T")[0];
 
+		// Fetch logs for last 30 days to get max
 		const logs = await db
 			.select()
 			.from(activityLog)
 			.where(
 				and(
 					eq(activityLog.userId, user.id),
-					gte(activityLog.date, sevenDaysAgoStr),
+					gte(activityLog.date, thirtyDaysAgoStr),
 				),
 			);
 
+		// Calculate max minutes in last 30 days
+		const monthMaxMinutes = logs.reduce(
+			(max, log) => (log.durationMinutes > max ? log.durationMinutes : max),
+			0,
+		);
+
 		// Initialize 7 days array
 		const graph = [];
+		// Max within the 7 days (to highlight the bar)
 		let maxInWeek = 0;
 
 		for (let i = 0; i < 7; i++) {
@@ -301,6 +404,8 @@ app
 			user: {
 				id: user.id,
 				name: user.name,
+
+				username: user.username,
 				image: user.image,
 				characterName: user.characterName,
 				level: user.level,
@@ -314,6 +419,7 @@ app
 				followerCount: Number(followerCount?.count || 0),
 				requestCount: Number(requestCount?.count || 0),
 				totalStampCount: Number(totalStamps?.count || 0),
+				monthMaxMinutes: monthMaxMinutes,
 			},
 			graph: graphWithMax,
 			favoriteStamps: favoriteStamps,
@@ -383,7 +489,7 @@ app
 		if (!sessionUser) return c.json({ error: "Unauthorized" }, 401);
 
 		const body = await c.req.parseBody();
-		const file = body["file"];
+		const file = body.file;
 
 		if (!file || !(file instanceof File)) {
 			return c.json({ error: "No file uploaded" }, 400);

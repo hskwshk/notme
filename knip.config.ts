@@ -20,6 +20,12 @@ const config: KnipConfig = {
 		"db/seed-home.ts",
 		"hooks/use-notification-manager.ts",
 		"public/sw.js",
+		"components/notice-card.tsx",
+		"components/site-header.tsx",
+		"components/top.tsx",
+		"server/services/streak.ts",
+		"server/objects/stamp.ts",
+		"lib/auth-actions.ts",
 	],
 };
 
