@@ -129,7 +129,7 @@ export default function ProfilePage() {
 				<div className="absolute top-0 left-0 w-full h-full border-2 border-blue-400/30 rounded-3xl pointer-events-none" />
 
 				{/* Icon */}
-				<div className="w-full aspect-square max-w-[200px] mx-auto mb-4 rounded-2xl overflow-hidden bg-gray-200">
+				<div className="relative w-full aspect-square max-w-[200px] mx-auto mb-4 rounded-2xl overflow-hidden bg-gray-200">
 					{profile.user.image ? (
 						<Image
 							src={profile.user.image}
