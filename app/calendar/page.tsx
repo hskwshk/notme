@@ -148,28 +148,37 @@ export default function CalendarPage() {
 
 	return (
 		<div className="min-h-screen bg-[#F2F2F7] pb-32 font-sans text-slate-900">
-			{/* Header / Month Selector */}
-			<div className="pt-8 px-6 pb-2 flex items-center justify-between">
+			{/* ヘッダー（月 / 継続記録） */}
+			<div className="pt-8 pb-[20px] flex items-center justify-between">
 				<div className="flex items-center gap-1">
-					<span className="text-3xl font-bold tracking-tight">
-						{data.month}月
+					<span className="text-[36px] font-bold tracking-tight">
+						{data.month}
+						<span className="text-[20px]">月</span>
 					</span>
 					<ChevronRight className="rotate-90 h-5 w-5 text-gray-400 mt-1" />
 				</div>
 
 				<div className="flex items-center gap-2">
-					{data.currentStreak > 0 && (
+					{/* {data.currentStreak > 0 && (
 						<div className="bg-sky-400 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm">
 							<span className="text-orange-300 text-sm">🔥</span>{" "}
 							{data.currentStreak}日継続中
 						</div>
-					)}
+					)} */}
+					{/* テスト用継続日数 */}
+					<div className="bg-sky-400 text-white px-3 py-1.5 rounded-[10px] font-bold flex items-center gap-1 shadow-sm">
+						<span className="text-orange-300 text-sm">
+							<Image src="/sample/fire.png" alt="炎" width={15} height={15} />
+						</span>{" "}
+						{data.currentStreak}日継続中
+					</div>
 				</div>
 			</div>
 
 			{/* Month Navigation (Invisible or swipe, but adding buttons for usability now) */}
 			{/* Ideally swipe, but adding simple arrows for now */}
-			<div className="px-6 flex justify-end gap-4 mb-4">
+			{/* 横移動ボタン */}
+			{/* <div className="flex justify-end gap-4 mb-4">
 				<button
 					type="button"
 					onClick={handlePrevMonth}
@@ -184,25 +193,31 @@ export default function CalendarPage() {
 				>
 					<ChevronRight className="h-4 w-4" />
 				</button>
-			</div>
+			</div> */}
 
-			{/* Calendar Grid */}
-			<div className="px-4">
-				<div className="border-2 border-slate-800 rounded-3xl p-5 bg-white relative overflow-hidden shadow-sm">
-					{/* Days Header */}
+			{/* カレンダー */}
+			<div>
+				<div className="border-1 border-slate-800 rounded-[15px] py-4 px-1 bg-[#F1FAFF] relative overflow-hidden shadow-sm">
+					{/* 曜日 */}
 					<div className="grid grid-cols-7 mb-4">
 						{DAYS_OF_WEEK.map((day, i) => (
 							<div
 								key={day}
-								className={`text-center text-sm font-bold ${i === 0 ? "text-red-500" : "text-slate-900"}`}
+								className={`text-center font-bold ${
+									i === 0
+										? "text-red-500"
+										: i === 6
+											? "text-blue-500"
+											: "text-slate-900"
+								}`}
 							>
 								{day}
 							</div>
 						))}
 					</div>
 
-					{/* Days Cells */}
-					<div className="grid grid-cols-7 gap-y-6 gap-x-1">
+					{/* 日付 */}
+					<div className="grid grid-cols-7 gap-y-4 gap-x-1">
 						{(() => {
 							const year = data.year;
 							const month = data.month;
@@ -222,7 +237,7 @@ export default function CalendarPage() {
 										key={`prev-${dayNum}`}
 										className="flex flex-col items-center justify-start gap-1 h-16 opacity-30"
 									>
-										<span className="text-xl font-bold text-slate-400">
+										<span className="text-[20px] font-bold text-slate-400">
 											{dayNum}
 										</span>
 										<div className="w-8 h-8 rounded-full bg-slate-300" />
@@ -234,10 +249,16 @@ export default function CalendarPage() {
 							for (let d = 1; d <= daysInMonth; d++) {
 								const dayData = data.days.find((day) => day.day === d);
 								const isSunday = new Date(year, month - 1, d).getDay() === 0;
+								const isSaturday = new Date(year, month - 1, d).getDay() === 6;
 								const isHoliday = month === 4 && d === 29; // Demo: Showa Day
 
+								// 曜日の色分けロジック
 								const dayLabelColor =
-									isSunday || isHoliday ? "text-red-500" : "text-slate-900";
+									isSunday || isHoliday
+										? "text-red-500"
+										: isSaturday
+											? "text-blue-500"
+											: "text-slate-900";
 
 								cells.push(
 									<div
@@ -293,8 +314,8 @@ export default function CalendarPage() {
 				</div>
 			</div>
 
-			{/* Gamification / Level Section */}
-			<div className="mx-4 mt-4 space-y-4">
+			{/* レベル/記録 */}
+			<div className="mt-4 space-y-4">
 				<LevelProgress
 					level={data.level}
 					progress={data.missionProgress}
@@ -302,33 +323,34 @@ export default function CalendarPage() {
 					onGachaClick={handleGachaDraw}
 				/>
 
-				{/* Stats Row - Consolidated into one card */}
-				<div className="bg-gradient-to-r from-sky-400 to-cyan-300 text-white rounded-3xl p-5 shadow-md flex justify-between items-center text-center">
+				{/* 統計カード */}
+				<div className="bg-gradient-to-r from-sky-400 to-cyan-300 text-white rounded-[15px] p-2 shadow-md flex justify-between items-center text-center">
 					<div className="flex-1">
-						<div className="text-[10px] font-medium opacity-90 mb-1 flex items-center justify-center gap-1">
-							<span className="text-orange-300">🔥</span> 最大継続日数
+						<div className="text-[12px] font-bold opacity-90 mb-1 flex items-center justify-center gap-1">
+							<span className="text-orange-300">
+								<Image src="/sample/fire.png" alt="炎" width={15} height={15} />
+							</span>{" "}
+							最大継続日数
 						</div>
-						<div className="text-xl font-bold">
+						<div className="font-bold">
 							{data.stats.maxStreak}
 							<span className="text-xs font-normal ml-0.5 opacity-80">日</span>
 						</div>
 					</div>
-					<div className="w-px h-8 bg-white/30" />
 					<div className="flex-1">
-						<div className="text-[10px] font-medium opacity-90 mb-1">
+						<div className="text-[12px] font-bold opacity-90 mb-1">
 							合計スタンプ所持数
 						</div>
-						<div className="text-xl font-bold">
+						<div className="font-bold">
 							{data.stats.totalStamps}
 							<span className="text-xs font-normal ml-0.5 opacity-80">個</span>
 						</div>
 					</div>
-					<div className="w-px h-8 bg-white/30" />
 					<div className="flex-1">
-						<div className="text-[10px] font-medium opacity-90 mb-1">
+						<div className="text-[12px] font-bold opacity-90 mb-1">
 							合計運動時間
 						</div>
-						<div className="text-xl font-bold">
+						<div className="font-bold">
 							{data.stats.totalDuration}
 							<span className="text-xs font-normal ml-0.5 opacity-80">分</span>
 						</div>

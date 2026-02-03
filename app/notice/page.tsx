@@ -4,8 +4,6 @@ import { BottomNav } from "@/components/bottom-nav";
 import { Card } from "@/components/notice-card";
 import { Top } from "@/components/top";
 
-// import Image from "next/image";
-
 // トップのテストデータ
 const pageName = "通知";
 
