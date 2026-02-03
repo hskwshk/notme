@@ -30,8 +30,8 @@ const createSaveBlobFile =
 	async <T extends BlobFile>(file: T): Promise<UploadedFile<T>> => {
 		// Local fallback if R2 URL is dummy or missing
 		if (!url || url.includes("barbar.foo")) {
-			const fs = await import("fs/promises");
-			const path = await import("path");
+			const fs = await import("node:fs/promises");
+			const path = await import("node:path");
 
 			const publicPath = path.join(process.cwd(), "public");
 			// Ensure bucket directory exists
