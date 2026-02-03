@@ -55,21 +55,20 @@ export function StatsCard({
 			</div>
 
 			{/* レベル */}
-			<div className="flex items-center gap-3 mb-6">
+			<div className="flex items-center gap-3 mb-4">
 				<div className="relative flex items-center justify-center">
 					<Flame className="h-10 w-10 text-orange-600 fill-orange-500 drop-shadow-md" />{" "}
-					{/* Icon is customized to look 'hot' */}
-					<span className="absolute text-[20px] font-bold text-white pt-1">
+					<span className="absolute text-[20px] font-bold text-black pt-1">
 						{currentStreak}
 					</span>
 				</div>
-				<span className="text-2xl font-black italic tracking-wide drop-shadow-md">
+				<span className="text-2xl font-black tracking-wide drop-shadow-md">
 					Lv.{level}
 				</span>
 			</div>
 
 			{/* メインコンテンツ */}
-			<div className="flex gap-4 mb-6 items-center">
+			<div className="flex gap-4 mb-1 items-center">
 				{/* グラフ */}
 				<div className="">
 					{/* スタイルテスト用画像 */}
