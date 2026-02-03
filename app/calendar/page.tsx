@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { BottomNav } from "@/components/bottom-nav";
 import { GachaModal } from "@/components/calendar/gacha-modal";
@@ -209,13 +210,14 @@ export default function CalendarPage() {
 							</span>
 
 							{/* Stamp Placeholder / Image */}
-							<div className="h-8 w-8 flex items-center justify-center">
+							<div className="h-8 w-8 flex items-center justify-center relative">
 								{day.stamp ? (
-									// biome-ignore lint/performance/noImgElement: dynamic user content without next/image
-									<img
+									<Image
 										src={day.stamp.imageUrl}
 										alt={day.stamp.name}
-										className="w-full h-full object-contain"
+										fill
+										className="object-contain"
+										unoptimized
 									/>
 								) : day.hasActivity ? (
 									// Fallback if no specific stamp but has activity?

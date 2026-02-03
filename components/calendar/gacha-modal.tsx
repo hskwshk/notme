@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 // Note: Using standard CSS/Tailwind for animations instead of framer-motion to reduce dependencies.
@@ -89,11 +90,12 @@ export function GachaModal({ isOpen, onClose, stamp }: GachaModalProps) {
 							<div className="relative w-48 h-48 mx-auto mb-6">
 								{/* Placeholder for stamp image */}
 								{}
-								{/* biome-ignore lint/performance/noImgElement: decorative image without next/image config */}
-								<img
+								<Image
 									src={stamp.imageUrl}
 									alt={stamp.name}
-									className="w-full h-full object-contain drop-shadow-lg"
+									fill
+									className="object-contain drop-shadow-lg"
+									unoptimized
 								/>
 							</div>
 

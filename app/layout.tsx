@@ -19,6 +19,8 @@ export const metadata: Metadata = {
 	description: "Next.js + Hono + Better Auth demo",
 };
 
+import { BottomNav } from "@/components/bottom-nav";
+
 export default function RootLayout({
 	children,
 }: Readonly<{
@@ -30,7 +32,10 @@ export default function RootLayout({
 				className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-zinc-50 text-zinc-900 antialiased`}
 			>
 				<SiteHeader />
-				<main className="mx-auto w-full max-w-5xl px-6 py-10">{children}</main>
+				<main className="mx-auto w-full max-w-5xl px-6 py-10 pb-24">
+					{children}
+				</main>
+				<BottomNav />
 			</body>
 		</html>
 	);
