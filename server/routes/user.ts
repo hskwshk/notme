@@ -1,5 +1,5 @@
 import { zValidator } from "@hono/zod-validator";
-import { and, eq, gte, like, or, sql } from "drizzle-orm";
+import { and, eq, gte, ilike, or, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { HonoEnv } from "@/server/types";
@@ -10,6 +10,9 @@ import {
 	userStamp,
 	user as userTable,
 } from "../../db/schema";
+import { createFileRepository } from "../infrastructure/repositories/file";
+import { FileId } from "../objects/file";
+import { passwordSchema, usernameSchema } from "../objects/user";
 
 const app = new Hono<HonoEnv>()
 	.get(
@@ -22,12 +25,18 @@ const app = new Hono<HonoEnv>()
 		),
 		async (c) => {
 			const db = c.get("db");
+			const user = c.get("user");
 			const { q } = c.req.valid("query");
+
+			if (!user) {
+				return c.json({ error: "Unauthorized" }, 401);
+			}
 
 			if (!q) {
 				return c.json({ users: [] });
 			}
 
+			// Search users (exclude self)
 			const users = await db
 				.select({
 					id: userTable.id,
@@ -36,10 +45,48 @@ const app = new Hono<HonoEnv>()
 					currentStreak: userTable.currentStreak,
 				})
 				.from(userTable)
-				.where(or(like(userTable.name, `%${q}%`), eq(userTable.id, q)))
+				.where(
+					and(
+						or(
+							ilike(userTable.name, `%${q}%`),
+							ilike(userTable.username, `%${q}%`),
+							eq(userTable.id, q),
+						),
+					),
+				)
 				.limit(20);
 
-			return c.json({ users });
+			const filteredUsers = users.filter((u) => u.id !== user.id);
+
+			if (filteredUsers.length === 0) {
+				return c.json({ users: [] });
+			}
+
+			// Check friendship status
+			// foundUserIds was unused, removed.
+
+			const friendships = await db.query.friendship.findMany({
+				where: or(
+					and(eq(friendship.userId, user.id)),
+					and(eq(friendship.friendId, user.id)),
+				),
+			});
+
+			// Map status
+			const usersWithStatus = filteredUsers.map((u) => {
+				const rel = friendships.find(
+					(f) =>
+						(f.userId === user.id && f.friendId === u.id) ||
+						(f.userId === u.id && f.friendId === user.id),
+				);
+				return {
+					...u,
+					friendshipStatus: rel ? rel.status : "none", // 'pending' or 'accepted' or 'none'
+					isSender: rel ? rel.userId === user.id : false, // To distinguish if I sent the request
+				};
+			});
+
+			return c.json({ users: usersWithStatus });
 		},
 	)
 	.post("/:id/friend-request", async (c) => {
@@ -91,6 +138,28 @@ const app = new Hono<HonoEnv>()
 		});
 
 		return c.json({ success: true, status: "pending" });
+	})
+	.delete("/:id/friend-request", async (c) => {
+		const db = c.get("db");
+		const user = c.get("user");
+		const friendId = c.req.param("id");
+
+		if (!user) {
+			return c.json({ error: "Unauthorized" }, 401);
+		}
+
+		// Delete pending request where user is sender and friendId is recipient
+		await db
+			.delete(friendship)
+			.where(
+				and(
+					eq(friendship.userId, user.id),
+					eq(friendship.friendId, friendId),
+					eq(friendship.status, "pending"),
+				),
+			);
+
+		return c.json({ success: true });
 	})
 	.get("/me/friend-requests", async (c) => {
 		const db = c.get("db");
@@ -160,6 +229,38 @@ const app = new Hono<HonoEnv>()
 
 		// Delete
 		await db.delete(friendship).where(eq(friendship.id, requestId));
+
+		return c.json({ success: true });
+	})
+	.delete("/:id/friend", async (c) => {
+		const db = c.get("db");
+		const user = c.get("user");
+		const friendId = c.req.param("id");
+
+		if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+		// Find and delete accepted friendship
+		const existingFriendship = await db.query.friendship.findFirst({
+			where: and(
+				or(
+					and(
+						eq(friendship.userId, user.id),
+						eq(friendship.friendId, friendId),
+					),
+					and(
+						eq(friendship.userId, friendId),
+						eq(friendship.friendId, user.id),
+					),
+				),
+				eq(friendship.status, "accepted"),
+			),
+		});
+
+		if (!existingFriendship) {
+			return c.json({ error: "Friendship not found" }, 404);
+		}
+
+		await db.delete(friendship).where(eq(friendship.id, existingFriendship.id));
 
 		return c.json({ success: true });
 	})
@@ -303,7 +404,7 @@ const app = new Hono<HonoEnv>()
 			user: {
 				id: user.id,
 				name: user.name,
-				// @ts-expect-error: username is not in the type definition yet
+
 				username: user.username,
 				image: user.image,
 				characterName: user.characterName,
@@ -378,6 +479,91 @@ const app = new Hono<HonoEnv>()
 						);
 				}
 			});
+			return c.json({ success: true });
+		},
+	)
+	.post("/me/profile/image", async (c) => {
+		const db = c.get("db");
+		const sessionUser = c.get("user");
+
+		if (!sessionUser) return c.json({ error: "Unauthorized" }, 401);
+
+		const body = await c.req.parseBody();
+		const file = body.file;
+
+		if (!file || !(file instanceof File)) {
+			return c.json({ error: "No file uploaded" }, 400);
+		}
+
+		const { client, baseUrl } = c.get("r2");
+		const fileRepository = createFileRepository(client, db, baseUrl);
+
+		const blobFile = {
+			kind: "BlobFile" as const,
+			id: FileId(crypto.randomUUID()),
+			bucket: "uploads",
+			key: `users/${sessionUser.id}/${Date.now()}-${file.name}`,
+			blob: file,
+			contentType: file.type,
+			expiresAt: null,
+		};
+
+		const uploaded = await fileRepository.saveBlobFile(blobFile);
+		const imageUrl = `${baseUrl}/${uploaded.bucket}/${uploaded.key}`;
+
+		await db
+			.update(userTable)
+			.set({ image: imageUrl })
+			.where(eq(userTable.id, sessionUser.id));
+
+		return c.json({ url: imageUrl });
+	})
+	.put(
+		"/me/profile",
+		zValidator(
+			"json",
+			z.object({
+				name: z.string().min(1).optional(),
+				username: usernameSchema.optional(),
+				password: passwordSchema.optional(),
+				characterName: z.string().optional(),
+			}),
+		),
+		async (c) => {
+			const db = c.get("db");
+			const sessionUser = c.get("user");
+			const { name, username, characterName } = c.req.valid("json");
+
+			if (!sessionUser) return c.json({ error: "Unauthorized" }, 401);
+
+			// Fetch full user to get current username
+			const user = await db.query.user.findFirst({
+				where: eq(userTable.id, sessionUser.id),
+			});
+
+			if (!user) return c.json({ error: "User not found" }, 404);
+
+			// Check username uniqueness if changing
+			if (username && username !== user.username) {
+				const existing = await db.query.user.findFirst({
+					where: eq(userTable.username, username),
+				});
+				if (existing) {
+					return c.json({ error: "Username already taken" }, 400);
+				}
+			}
+
+			// Update User
+			await db
+				.update(userTable)
+				.set({
+					name: name ?? undefined,
+					username: username ?? undefined,
+					characterName: characterName ?? undefined,
+				})
+				.where(eq(userTable.id, user.id));
+
+			// Password update skipped (see previous notes)
 
 			return c.json({ success: true });
 		},

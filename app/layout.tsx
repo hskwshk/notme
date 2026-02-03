@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
+import { BottomNav } from "@/components/bottom-nav";
 import { SiteHeader } from "@/components/site-header";
 import "./globals.css";
 
@@ -18,8 +19,6 @@ export const metadata: Metadata = {
 	title: "Next Tokuzou Kit",
 	description: "Next.js + Hono + Better Auth demo",
 };
-
-import { BottomNav } from "@/components/bottom-nav";
 
 export default function RootLayout({
 	children,

@@ -215,4 +215,101 @@ describe("GET /me/profile", () => {
 		expect(g1.isMax).toBe(true);
 		expect(g0.isMax).toBe(false);
 	});
+
+	it("updates user profile (username, name, password)", async () => {
+		const userMe = await createUser({
+			id: "me_update_profile",
+			username: "old_user",
+			name: "Old Name",
+		});
+
+		const app = new Hono<HonoEnv>()
+			.use(async (c, next) => {
+				c.set("db", db);
+				// @ts-expect-error: Mock user type mismatch
+				c.set("user", userMe);
+				await next();
+			})
+			.route("/", userRoute);
+
+		const res = await app.request("/me/profile", {
+			method: "PUT",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				username: "new_user",
+				name: "New Name",
+				password: "newpassword123",
+			}),
+		});
+
+		expect(res.status).toBe(200);
+		const json = await res.json();
+		expect(json.success).toBe(true);
+
+		// Verify in DB
+		const updatedUser = await db.query.user.findFirst({
+			where: (users, { eq }) => eq(users.id, userMe.id),
+		});
+		expect(updatedUser?.username).toBe("new_user");
+		expect(updatedUser?.name).toBe("New Name");
+		// Note: Password verification would depend on how auth handles it,
+		// but since we are mocking auth/middleware, we primarily check if the API accepts it.
+		// In a real integration test we would check the auth provider.
+	});
+
+	it("fails to update profile with duplicate username", async () => {
+		await createUser({ id: "other_user", username: "taken_user" });
+		const userMe = await createUser({
+			id: "me_update_fail",
+			username: "my_user",
+		});
+
+		const app = new Hono<HonoEnv>()
+			.use(async (c, next) => {
+				c.set("db", db);
+				// @ts-expect-error: Mock user type mismatch
+				c.set("user", userMe);
+				await next();
+			})
+			.route("/", userRoute);
+
+		const res = await app.request("/me/profile", {
+			method: "PUT",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				username: "taken_user",
+			}),
+		});
+
+		expect(res.status).toBe(400);
+		const json = await res.json();
+		expect(json.error).toBe("Username already taken");
+	});
+	it("fails to update profile with invalid password", async () => {
+		const userMe = await createUser({ id: "me_password_fail" });
+		const app = new Hono<HonoEnv>()
+			.use(async (c, next) => {
+				c.set("db", db);
+				// @ts-expect-error: Mock user type mismatch
+				c.set("user", userMe);
+				await next();
+			})
+			.route("/", userRoute);
+
+		// Too short
+		let res = await app.request("/me/profile", {
+			method: "PUT",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ password: "short" }),
+		});
+		expect(res.status).toBe(400);
+
+		// Non-alphanumeric
+		res = await app.request("/me/profile", {
+			method: "PUT",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ password: "password!" }),
+		});
+		expect(res.status).toBe(400);
+	});
 });

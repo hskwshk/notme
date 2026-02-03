@@ -3,6 +3,10 @@
 import { useEffect, useState } from "react";
 import { BottomNav } from "@/components/bottom-nav";
 import { DailyGoalManager } from "@/components/daily-goal-manager";
+import {
+	FriendActivityCard,
+	type FriendData,
+} from "@/components/home/friend-activity-card";
 import { HomeHeader } from "@/components/home/home-header";
 import { StatsCard } from "@/components/home/stats-card";
 import { UserSection } from "@/components/home/user-section";
@@ -22,6 +26,7 @@ interface HomeData {
 		maxStreak: number;
 		todayExerciseMinutes: number;
 		maxExerciseMinutes: number;
+		monthMaxMinutes: number;
 		graphData: {
 			label: string;
 			minutes: number;
@@ -31,6 +36,7 @@ interface HomeData {
 	dailyQuote: {
 		text: string;
 	} | null;
+	friends: FriendData[];
 }
 
 export default function Home() {
@@ -54,16 +60,16 @@ export default function Home() {
 
 	if (!data) {
 		// Loading state
-		return <div className="min-h-screen bg-gray-50"></div>;
+		return <div className="min-h-screen"></div>;
 	}
 
 	return (
-		<div className="min-h-screen bg-gray-50 pb-32 font-sans">
+		<div className="min-h-screen pb-32 font-sans">
 			{/* Daily Goal Modal Manager */}
 			<DailyGoalManager />
 
 			{/* Main Content */}
-			<div className="max-w-md mx-auto bg-gray-50 min-h-screen relative shadow-sm">
+			<div className="mx-auto min-h-screen relative">
 				<HomeHeader hasUnreadNotifications={data.user.hasUnreadNotifications} />
 
 				<main className="space-y-6">
@@ -83,12 +89,20 @@ export default function Home() {
 						quote={data.dailyQuote?.text ?? null}
 					/>
 
-					{/* Placeholder for other users/friends list if needed */}
+					{/* Friends List */}
+					{data.friends?.length > 0 && (
+						<div className="space-y-4">
+							<div className="flex items-center justify-between mx-4 mt-2">
+								<h2 className="font-bold text-lg">友達</h2>
+							</div>
+							{data.friends.map((friend) => (
+								<FriendActivityCard key={friend.user.id} friend={friend} />
+							))}
+						</div>
+					)}
 				</main>
-
-				{/* Bottom Navigation */}
-				<BottomNav />
 			</div>
+			<BottomNav />
 		</div>
 	);
 }
