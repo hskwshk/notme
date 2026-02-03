@@ -81,7 +81,7 @@ export default function ProfileEditPage() {
 		if (val === "") return null;
 		const result = passwordSchema.safeParse(val);
 		if (!result.success) {
-			return result.error.issues[0].message;
+			return result.error.issues[0]?.message ?? "Invalid password";
 		}
 		return null;
 	};
@@ -129,10 +129,8 @@ export default function ProfileEditPage() {
 		try {
 			// 1. Upload Image if changed
 			if (imageFile) {
-				const formData = new FormData();
-				formData.append("file", imageFile);
 				const uploadRes = await apiClient.api.users.me.profile.image.$post({
-					body: { file: imageFile },
+					form: { file: imageFile },
 				});
 				if (!uploadRes.ok) throw new Error("Failed to upload image");
 			}

@@ -4,6 +4,7 @@ import { Clock, Edit, Flame, Trophy, User as UserIcon } from "lucide-react"; // 
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { BottomNav } from "@/components/bottom-nav";
 import { apiClient } from "@/lib/api-client";
 
 // Types matching API response
@@ -359,6 +360,7 @@ export default function ProfilePage() {
 					</span>
 				</div>
 			</div>
+			<BottomNav />
 		</div>
 	);
 }

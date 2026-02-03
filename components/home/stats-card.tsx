@@ -78,6 +78,8 @@ export function StatsCard({
 						className="object-cover"
 						width={117}
 						height={108}
+						style={{ width: "auto", height: "auto" }}
+						priority
 					/>
 
 					{/* {graphData.map((point, i) => {

@@ -1,6 +1,7 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
+// import { ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { BottomNav } from "@/components/bottom-nav";
@@ -99,17 +100,17 @@ export default function CalendarPage() {
 		// For now, let's just use it.
 	}, [currentDate, triggerGacha]);
 
-	const handlePrevMonth = () => {
-		setCurrentDate(
-			new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1),
-		);
-	};
+	// const handlePrevMonth = () => {
+	// 	setCurrentDate(
+	// 		new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1),
+	// 	);
+	// };
 
-	const handleNextMonth = () => {
-		setCurrentDate(
-			new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1),
-		);
-	};
+	// const handleNextMonth = () => {
+	// 	setCurrentDate(
+	// 		new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1),
+	// 	);
+	// };
 
 	const handleGachaDraw = async () => {
 		if (!data?.isLevelUpReady) return;
@@ -168,7 +169,13 @@ export default function CalendarPage() {
 					{/* テスト用継続日数 */}
 					<div className="bg-sky-400 text-white px-3 py-1.5 rounded-[10px] font-bold flex items-center gap-1 shadow-sm">
 						<span className="text-orange-300 text-sm">
-							<Image src="/sample/fire.png" alt="炎" width={15} height={15} />
+							<Image
+								src="/sample/fire.png"
+								alt="炎"
+								width={15}
+								height={15}
+								style={{ width: "auto", height: "auto" }}
+							/>
 						</span>{" "}
 						{data.currentStreak}日継続中
 					</div>
@@ -274,7 +281,7 @@ export default function CalendarPage() {
 										<div className="w-8 h-8 rounded-full bg-slate-300 absolute top-8" />
 
 										{/* Stamp Overlay */}
-										{dayData?.stamp && (
+										{dayData?.stamp?.imageUrl && (
 											<div className="absolute top-4 w-14 h-14 z-20 transform -rotate-6 hover:scale-110 transition-transform">
 												<Image
 													src={dayData.stamp.imageUrl}
@@ -328,7 +335,13 @@ export default function CalendarPage() {
 					<div className="flex-1">
 						<div className="text-[12px] font-bold opacity-90 mb-1 flex items-center justify-center gap-1">
 							<span className="text-orange-300">
-								<Image src="/sample/fire.png" alt="炎" width={15} height={15} />
+								<Image
+									src="/sample/fire.png"
+									alt="炎"
+									width={15}
+									height={15}
+									style={{ width: "auto", height: "auto" }}
+								/>
 							</span>{" "}
 							最大継続日数
 						</div>
