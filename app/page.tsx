@@ -60,16 +60,16 @@ export default function Home() {
 
 	if (!data) {
 		// Loading state
-		return <div className="min-h-screen bg-gray-50"></div>;
+		return <div className="min-h-screen"></div>;
 	}
 
 	return (
-		<div className="min-h-screen bg-gray-50 pb-32 font-sans">
+		<div className="min-h-screen pb-32 font-sans">
 			{/* Daily Goal Modal Manager */}
 			<DailyGoalManager />
 
 			{/* Main Content */}
-			<div className="max-w-md mx-auto bg-gray-50 min-h-screen relative shadow-sm">
+			<div className="mx-auto min-h-screen relative">
 				<HomeHeader hasUnreadNotifications={data.user.hasUnreadNotifications} />
 
 				<main className="space-y-6">
@@ -101,10 +101,8 @@ export default function Home() {
 						</div>
 					)}
 				</main>
-
-				{/* Bottom Navigation */}
-				<BottomNav />
 			</div>
+			<BottomNav />
 		</div>
 	);
 }
