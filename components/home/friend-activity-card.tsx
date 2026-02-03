@@ -1,3 +1,5 @@
+"use client";
+
 import {
 	Flame,
 	Maximize2,
@@ -5,6 +7,8 @@ import {
 	MoveUpRight,
 	User,
 } from "lucide-react";
+import { useState } from "react";
+import { apiClient } from "@/lib/api-client";
 
 interface GraphPoint {
 	label: string;
@@ -47,8 +51,25 @@ export function FriendActivityCard({ friend }: FriendActivityCardProps) {
 		60,
 	);
 
+	// State for menu
+	const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+	const handleUnfollow = async () => {
+		if (!confirm(`${friend.user.name}さんを友達から削除しますか？`)) return;
+
+		const res = await apiClient.api.users[":id"].friend.$delete({
+			param: { id: friend.user.id },
+		});
+
+		if (res.ok) {
+			window.location.reload();
+		} else {
+			alert("削除に失敗しました");
+		}
+	};
+
 	return (
-		<div className="flex flex-col gap-2 px-4">
+		<div className="flex flex-col gap-2 px-4 relative">
 			{/* Friend Header */}
 			<div className="flex items-center justify-between px-1">
 				<div className="flex items-center gap-3">
@@ -82,10 +103,36 @@ export function FriendActivityCard({ friend }: FriendActivityCardProps) {
 					</div>
 				</div>
 
-				{/* Menu Icon */}
-				<button type="button" className="text-gray-400">
-					<MoreHorizontal className="h-5 w-5" />
-				</button>
+				{/* Menu Icon & Dropdown */}
+				<div className="relative">
+					<button
+						type="button"
+						className="text-gray-400 p-1"
+						onClick={() => setIsMenuOpen(!isMenuOpen)}
+					>
+						<MoreHorizontal className="h-5 w-5" />
+					</button>
+
+					{isMenuOpen && (
+						<>
+							<button
+								type="button"
+								className="fixed inset-0 z-10 w-full h-full cursor-default"
+								onClick={() => setIsMenuOpen(false)}
+								aria-label="Close menu"
+							/>
+							<div className="absolute right-0 top-full mt-1 w-32 bg-white rounded-lg shadow-xl border border-gray-100 z-20 overflow-hidden">
+								<button
+									type="button"
+									onClick={handleUnfollow}
+									className="w-full text-left px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50 transition-colors"
+								>
+									友達を解除
+								</button>
+							</div>
+						</>
+					)}
+				</div>
 			</div>
 
 			{/* Stats Card */}
