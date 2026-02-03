@@ -28,14 +28,15 @@ export default function RootLayout({
 	return (
 		<html lang="en">
 			<body
-			// className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-zinc-50 text-zinc-900 antialiased`}
+				// className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-zinc-50 text-zinc-900 antialiased`}
+				className="px-[20px] pt-[60px]"
 			>
 				{/* <SiteHeader /> */}
 				{/* <main className="mx-auto w-full max-w-5xl px-6 py-10 pb-24">
 					{children}
 				</main> */}
 				{/* <BottomNav /> */}
-				<main className="px-[20px]">{children}</main>
+				<main>{children}</main>
 			</body>
 		</html>
 	);
