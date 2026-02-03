@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BottomNav } from "@/components/bottom-nav";
 import { DailyGoalManager } from "@/components/daily-goal-manager";
-import { FriendActivityCard } from "@/components/home/friend-activity-card";
+import {
+	FriendActivityCard,
+	type FriendData,
+} from "@/components/home/friend-activity-card";
 import { HomeHeader } from "@/components/home/home-header";
 import { StatsCard } from "@/components/home/stats-card";
 import { UserSection } from "@/components/home/user-section";
@@ -33,28 +35,7 @@ interface HomeData {
 	dailyQuote: {
 		text: string;
 	} | null;
-	friends?: {
-		user: {
-			name: string;
-			image: string | null;
-			characterName: string | null;
-			level: number;
-		};
-		stats: {
-			currentStreak: number;
-			maxStreak: number;
-			todayExerciseMinutes: number;
-			maxExerciseMinutes: number;
-			graphData: {
-				label: string;
-				minutes: number;
-				type: string;
-			}[];
-		};
-		quote: {
-			text: string;
-		} | null;
-	}[];
+	friends: FriendData[];
 }
 
 export default function Home() {
@@ -107,22 +88,18 @@ export default function Home() {
 						quote={data.dailyQuote?.text ?? null}
 					/>
 
-					{/* Friends Section Header */}
-					<div className="flex items-center justify-between mx-4 mt-2">
-						<h2 className="font-bold text-lg">友達</h2>
-					</div>
-
-					{/* Friends Feed */}
-					{data.friends?.map((friend, i) => (
-						<FriendActivityCard
-							key={`friend-${friend.user.name}-${i}`}
-							friend={friend}
-						/>
-					))}
+					{/* Friends List */}
+					{data.friends?.length > 0 && (
+						<div className="space-y-4">
+							<div className="flex items-center justify-between mx-4 mt-2">
+								<h2 className="font-bold text-lg">友達</h2>
+							</div>
+							{data.friends.map((friend) => (
+								<FriendActivityCard key={friend.user.id} friend={friend} />
+							))}
+						</div>
+					)}
 				</main>
-
-				{/* Bottom Navigation */}
-				<BottomNav />
 			</div>
 		</div>
 	);

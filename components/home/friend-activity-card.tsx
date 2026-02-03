@@ -16,7 +16,7 @@ interface GraphPoint {
 	type: string;
 }
 
-interface FriendData {
+export interface FriendData {
 	user: {
 		id: string;
 		name: string;
