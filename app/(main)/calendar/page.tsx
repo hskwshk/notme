@@ -152,9 +152,9 @@ export default function CalendarPage() {
 			{/* ヘッダー（月 / 継続記録） */}
 			<div className="pt-8 pb-[20px] flex items-center justify-between">
 				<div className="flex items-center gap-1">
-					<span className="text-[36px] font-bold tracking-tight">
+					<span className="text-[20px] font-bold tracking-tight ml-[15px]">
 						{data.month}
-						<span className="text-[20px]">月</span>
+						{/* <span className="text-[20px]">月</span> */}
 					</span>
 					<ChevronRight className="rotate-90 h-5 w-5 text-gray-400 mt-1" />
 				</div>
