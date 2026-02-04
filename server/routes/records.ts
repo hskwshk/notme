@@ -125,11 +125,13 @@ const recordsRoute = new Hono<HonoEnv>()
 					});
 				}
 
-				// Also update User total duration
+				// Also update User total duration and max minutes
+				const currentDailyTotal = (existingLog?.durationMinutes || 0) + minutes;
 				await tx
 					.update(userTable)
 					.set({
 						totalDuration: sql`${userTable.totalDuration} + ${minutes}`,
+						maxMinutes: sql`GREATEST(${userTable.maxMinutes}, ${currentDailyTotal})`,
 					})
 					.where(eq(userTable.id, user.id));
 			});

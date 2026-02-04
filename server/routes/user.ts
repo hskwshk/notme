@@ -1,9 +1,11 @@
 import { zValidator } from "@hono/zod-validator";
+import { hashPassword } from "better-auth/crypto";
 import { and, eq, gte, ilike, or, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { HonoEnv } from "@/server/types";
 import {
+	account,
 	activityLog,
 	friendship,
 	stamp,
@@ -347,24 +349,35 @@ const app = new Hono<HonoEnv>()
 			.where(and(eq(userStamp.userId, user.id), eq(userStamp.isFavorite, true)))
 			.orderBy(userStamp.favoriteOrder);
 
-		// 3. Graph Data (Last 7 days)
+		// 3. Graph Data (Last 7 days) & Month Max (Last 30 days for scaling)
 		const today = new Date();
+		const thirtyDaysAgo = new Date();
+		thirtyDaysAgo.setDate(today.getDate() - 30);
+		const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split("T")[0];
+
 		const sevenDaysAgo = new Date();
 		sevenDaysAgo.setDate(today.getDate() - 6);
-		const sevenDaysAgoStr = sevenDaysAgo.toISOString().split("T")[0];
 
+		// Fetch logs for last 30 days to get max
 		const logs = await db
 			.select()
 			.from(activityLog)
 			.where(
 				and(
 					eq(activityLog.userId, user.id),
-					gte(activityLog.date, sevenDaysAgoStr),
+					gte(activityLog.date, thirtyDaysAgoStr),
 				),
 			);
 
+		// Calculate max minutes in last 30 days
+		const monthMaxMinutes = logs.reduce(
+			(max, log) => (log.durationMinutes > max ? log.durationMinutes : max),
+			0,
+		);
+
 		// Initialize 7 days array
 		const graph = [];
+		// Max within the 7 days (to highlight the bar)
 		let maxInWeek = 0;
 
 		for (let i = 0; i < 7; i++) {
@@ -394,6 +407,8 @@ const app = new Hono<HonoEnv>()
 			user: {
 				id: user.id,
 				name: user.name,
+
+				username: user.username,
 				image: user.image,
 				characterName: user.characterName,
 				level: user.level,
@@ -407,10 +422,31 @@ const app = new Hono<HonoEnv>()
 				followerCount: Number(followerCount?.count || 0),
 				requestCount: Number(requestCount?.count || 0),
 				totalStampCount: Number(totalStamps?.count || 0),
+				monthMaxMinutes: monthMaxMinutes,
 			},
 			graph: graphWithMax,
 			favoriteStamps: favoriteStamps,
 		});
+	})
+	.get("/me/stamps", async (c) => {
+		const db = c.get("db");
+		const user = c.get("user");
+
+		if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+		const userStamps = await db
+			.select({
+				id: stamp.id,
+				name: stamp.name,
+				imageUrl: stamp.imageUrl,
+				isFavorite: userStamp.isFavorite,
+				favoriteOrder: userStamp.favoriteOrder,
+			})
+			.from(userStamp)
+			.innerJoin(stamp, eq(userStamp.stampId, stamp.id))
+			.where(eq(userStamp.userId, user.id));
+
+		return c.json({ stamps: userStamps });
 	})
 	.put(
 		"/me/profile/favorite-stamps",
@@ -495,15 +531,29 @@ const app = new Hono<HonoEnv>()
 			expiresAt: null,
 		};
 
-		const uploaded = await fileRepository.saveBlobFile(blobFile);
-		const imageUrl = `${baseUrl}/${uploaded.bucket}/${uploaded.key}`;
+		try {
+			const uploaded = await fileRepository.saveBlobFile(blobFile);
+			const imageUrl =
+				!baseUrl || baseUrl.includes("barbar.foo")
+					? `/${uploaded.bucket}/${uploaded.key}`
+					: `${baseUrl}/${uploaded.bucket}/${uploaded.key}`;
 
-		await db
-			.update(userTable)
-			.set({ image: imageUrl })
-			.where(eq(userTable.id, sessionUser.id));
+			await db
+				.update(userTable)
+				.set({ image: imageUrl })
+				.where(eq(userTable.id, sessionUser.id));
 
-		return c.json({ url: imageUrl });
+			return c.json({ url: imageUrl });
+		} catch (error) {
+			console.error("Backend Upload Error:", error);
+			return c.json(
+				{
+					error: "Internal Server Error during file upload",
+					details: error instanceof Error ? error.message : String(error),
+				},
+				500,
+			);
+		}
 	})
 	.put(
 		"/me/profile",
@@ -519,7 +569,7 @@ const app = new Hono<HonoEnv>()
 		async (c) => {
 			const db = c.get("db");
 			const sessionUser = c.get("user");
-			const { name, username, characterName } = c.req.valid("json");
+			const { name, username, characterName, password } = c.req.valid("json");
 
 			if (!sessionUser) return c.json({ error: "Unauthorized" }, 401);
 
@@ -550,7 +600,14 @@ const app = new Hono<HonoEnv>()
 				})
 				.where(eq(userTable.id, user.id));
 
-			// Password update skipped (see previous notes)
+			// Update Password if provided
+			if (password) {
+				const hashedPassword = await hashPassword(password);
+				await db
+					.update(account)
+					.set({ password: hashedPassword })
+					.where(eq(account.userId, user.id));
+			}
 
 			return c.json({ success: true });
 		},

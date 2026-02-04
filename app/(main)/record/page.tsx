@@ -3,6 +3,7 @@
 import { Flame, Minus } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
+import { BottomNav } from "@/components/bottom-nav";
 import { ConfirmModal } from "@/components/confirm-modal";
 import { TimeScrollPicker } from "@/components/time-scroll-picker";
 import { apiClient } from "@/lib/api-client";
@@ -241,6 +242,7 @@ export default function RecordPage() {
 				confirmText="削除する"
 				cancelText="キャンセル"
 			/>
+			<BottomNav />
 		</div>
 	);
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { BottomNav } from "@/components/bottom-nav";
 import { DailyGoalManager } from "@/components/daily-goal-manager";
 import {
 	FriendActivityCard,
@@ -59,16 +60,16 @@ export default function Home() {
 
 	if (!data) {
 		// Loading state
-		return <div className="min-h-screen bg-gray-50"></div>;
+		return <div className="min-h-screen"></div>;
 	}
 
 	return (
-		<div className="min-h-screen bg-gray-50 pb-32 font-sans">
+		<div className="min-h-screen pb-32 font-sans">
 			{/* Daily Goal Modal Manager */}
 			<DailyGoalManager />
 
 			{/* Main Content */}
-			<div className="max-w-md mx-auto bg-gray-50 min-h-screen relative shadow-sm">
+			<div className="mx-auto min-h-screen relative">
 				<HomeHeader hasUnreadNotifications={data.user.hasUnreadNotifications} />
 
 				<main className="space-y-6">
@@ -84,6 +85,7 @@ export default function Home() {
 						maxStreak={data.stats.maxStreak}
 						todayMinutes={data.stats.todayExerciseMinutes}
 						maxMinutes={data.stats.maxExerciseMinutes}
+						monthMaxMinutes={data.stats.monthMaxMinutes}
 						graphData={data.stats.graphData}
 						quote={data.dailyQuote?.text ?? null}
 					/>
@@ -101,6 +103,7 @@ export default function Home() {
 					)}
 				</main>
 			</div>
+			<BottomNav />
 		</div>
 	);
 }

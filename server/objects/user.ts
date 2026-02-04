@@ -2,13 +2,20 @@ import { z } from "zod";
 
 export const usernameSchema = z
 	.string()
-	.min(1)
+	.min(1, "ユーザーIDを入力してください")
+	.max(30, "ユーザーIDは30文字以内で入力してください")
 	.regex(
-		/^(?!.*\.\.)[a-zA-Z0-9_](?:[a-zA-Z0-9_.]*[a-zA-Z0-9_])?$/,
-		"Only letters, numbers, underscores and dots allowed (no consecutive dots, cannot start/end with dot)",
-	);
+		/^[a-zA-Z0-9_.]*$/,
+		"半角英数字、アンダースコア、ドットのみ使用可能です",
+	)
+	.regex(/^(?!\.).*$/, "ドットから始めることはできません")
+	.regex(/.*(?<!\.)$/, "ドットで終わることはできません")
+	.regex(/^(?!.*\.\.).*$/, "ドットを連続して使用することはできません");
 
 export const passwordSchema = z
 	.string()
-	.min(8)
-	.regex(/^[a-zA-Z0-9]+$/, "Password must be alphanumeric");
+	.min(8, "パスワードは8文字以上で入力してください")
+	.regex(
+		/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/,
+		"パスワードは半角英字と数字の両方を含める必要があります",
+	);
