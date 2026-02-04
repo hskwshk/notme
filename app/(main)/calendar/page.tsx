@@ -174,7 +174,7 @@ export default function CalendarPage() {
 								alt="炎"
 								width={15}
 								height={15}
-								style={{ width: "auto", height: "auto" }}
+								// style={{ width: "auto", height: "auto" }}
 							/>
 						</span>{" "}
 						{data.currentStreak}日継続中
@@ -340,7 +340,7 @@ export default function CalendarPage() {
 									alt="炎"
 									width={15}
 									height={15}
-									style={{ width: "auto", height: "auto" }}
+									// style={{ width: "auto", height: "auto" }}
 								/>
 							</span>{" "}
 							最大継続日数
