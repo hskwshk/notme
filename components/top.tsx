@@ -19,13 +19,13 @@ export function Top({ name, backType = "home" }: TopProps) {
 	};
 
 	return (
-		<header className="flex items-center justify-between h-[100px] px-4 text-[#676767]">
-			<div className="w-10">
+		<header className="flex items-center justify-between h-[60px] px-4 mb-[30px] text-[#676767]">
+			<div className="size-[30px]">
 				{backType !== "none" && (
 					<button
 						type="button"
 						onClick={handleBack}
-						className="text-[20px] w-10 h-10 flex items-center justify-center ml-[20px]"
+						className="flex items-center justify-center size-full"
 						aria-label="戻る"
 					>
 						＜
@@ -36,7 +36,7 @@ export function Top({ name, backType = "home" }: TopProps) {
 			<h1 className="text-[24px] text-center flex-1">{name}</h1>
 
 			{/* 右側スペース確保（中央揃えのため） */}
-			<div className="w-10"></div>
+			<div className="w-[30px]"></div>
 		</header>
 	);
 }

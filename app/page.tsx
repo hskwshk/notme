@@ -85,6 +85,7 @@ export default function Home() {
 						maxStreak={data.stats.maxStreak}
 						todayMinutes={data.stats.todayExerciseMinutes}
 						maxMinutes={data.stats.maxExerciseMinutes}
+						monthMaxMinutes={data.stats.monthMaxMinutes}
 						graphData={data.stats.graphData}
 						quote={data.dailyQuote?.text ?? null}
 					/>

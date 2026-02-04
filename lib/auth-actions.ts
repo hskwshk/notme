@@ -23,13 +23,31 @@ export async function signInWithEmail(params: {
 	return { success: true };
 }
 
+export async function signInWithUsername(params: {
+	username: string;
+	password: string;
+}): Promise<AuthResult> {
+	const { error } = await authClient.signIn.username({
+		username: params.username,
+		password: params.password,
+	});
+
+	if (error) {
+		return { success: false, error: error.message };
+	}
+
+	return { success: true };
+}
+
 export async function signUpWithEmail(params: {
 	name: string;
+	username: string;
 	email: string;
 	password: string;
 }): Promise<AuthResult> {
 	const { error } = await authClient.signUp.email({
 		name: params.name,
+		username: params.username,
 		email: params.email,
 		password: params.password,
 	});
