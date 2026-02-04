@@ -46,7 +46,9 @@ export default function Home() {
 		const fetchData = async () => {
 			const res = await apiClient.api.home.$get();
 			if (res.ok) {
-				const json = await res.json();
+				// biome-ignore lint/suspicious/noExplicitAny: Hono RPC type instantiation is too deep
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				const json = (await res.json()) as any;
 				if ("error" in json) return;
 				setData(json as HomeData);
 			} else if (res.status === 401) {
