@@ -43,6 +43,7 @@ const app = new Hono<HonoEnv>()
 				.select({
 					id: userTable.id,
 					name: userTable.name,
+					username: userTable.username,
 					image: userTable.image,
 					currentStreak: userTable.currentStreak,
 				})
