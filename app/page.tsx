@@ -60,16 +60,16 @@ export default function Home() {
 
 	if (!data) {
 		// Loading state
-		return <div className="min-h-screen"></div>;
+		return <div className="min-h-screen font-sans text-slate-900"></div>;
 	}
 
 	return (
-		<div className="min-h-screen pb-32 font-sans">
+		<div className="font-sans text-slate-900">
 			{/* Daily Goal Modal Manager */}
 			<DailyGoalManager />
 
 			{/* Main Content */}
-			<div className="mx-auto min-h-screen relative">
+			<div className="relative">
 				<HomeHeader hasUnreadNotifications={data.user.hasUnreadNotifications} />
 
 				<main className="space-y-6">
