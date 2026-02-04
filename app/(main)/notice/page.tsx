@@ -87,10 +87,10 @@ export default function Notice() {
 
 				<BottomNav />
 			</main>
-			<div>
+			{/* <div>
 				<h1>{pageName}</h1>
 				<p>Check console for data.</p>
-			</div>
+			</div> */}
 		</>
 	);
 }

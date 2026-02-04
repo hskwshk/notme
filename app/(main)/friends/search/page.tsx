@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, Search, User, UserCheck } from "lucide-react";
+import { Check, ChevronLeft, Search, User, UserCheck, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { apiClient } from "@/lib/api-client";
@@ -15,11 +15,22 @@ interface SearchUser {
 	isSender: boolean;
 }
 
+interface FriendRequest {
+	id: string; // Request ID
+	user: {
+		id: string;
+		name: string;
+		image: string | null;
+		// stored other fields if needed
+	};
+}
+
 export default function FriendSearchPage() {
 	const router = useRouter();
 	const [query, setQuery] = useState("");
 	const [results, setResults] = useState<SearchUser[]>([]);
 	const [history, setHistory] = useState<SearchUser[]>([]); // Stored in local storage
+	const [requests, setRequests] = useState<FriendRequest[]>([]); // Incoming requests
 	const [isSearching, setIsSearching] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 
@@ -33,6 +44,25 @@ export default function FriendSearchPage() {
 				console.error("Failed to parse history", e);
 			}
 		}
+	}, []);
+
+	// Fetch friend requests on mount
+	useEffect(() => {
+		const fetchRequests = async () => {
+			try {
+				const res = await apiClient.api.users.me["friend-requests"].$get();
+				if (res.ok) {
+					const json = await res.json();
+					// The API returns { requests: { id, user: {...} }[] }
+					// We need to map it correctly if needed, but the structure seems to match FriendRequest interface largely
+					// Assuming the API returns user object inside request
+					setRequests(json.requests as unknown as FriendRequest[]);
+				}
+			} catch (error) {
+				console.error("Failed to fetch requests", error);
+			}
+		};
+		fetchRequests();
 	}, []);
 
 	// Save history helper
@@ -203,13 +233,50 @@ export default function FriendSearchPage() {
 		}
 	};
 
+	const handleAccept = async (requestId: string) => {
+		// Optimistic remove
+		const prevRequests = [...requests];
+		setRequests(requests.filter((r) => r.id !== requestId));
+
+		try {
+			const res = await apiClient.api.users["friend-request"][
+				":requestId"
+			].accept.$post({
+				param: { requestId },
+			});
+			if (!res.ok) throw new Error("Failed to accept");
+			// Refresh results if showing to update status?
+			// Ideally we would update status of user in results/history if present
+			// but for now simplest is just accept.
+		} catch (e) {
+			console.error("Accept failed", e);
+			setRequests(prevRequests);
+			alert("承認に失敗しました");
+		}
+	};
+
+	const handleDecline = async (requestId: string) => {
+		// Optimistic remove
+		const prevRequests = [...requests];
+		setRequests(requests.filter((r) => r.id !== requestId));
+
+		try {
+			const res = await apiClient.api.users["friend-request"][
+				":requestId"
+			].$delete({
+				param: { requestId },
+			});
+			if (!res.ok) throw new Error("Failed to decline");
+		} catch (e) {
+			console.error("Decline failed", e);
+			setRequests(prevRequests);
+			alert("拒否に失敗しました");
+		}
+	};
+
 	// Render User Card
 	const UserCard = ({ user }: { user: SearchUser }) => {
 		// Random gradient or deterministic based on ID
-		// Simple approach: alternating colors based on ID char code sum?
-		// For now, using the style from image (Gradient)
-		// Image shows variety: Red/Purple, Green/Yellow/Blue, Blue/Cyan, etc.
-		// Let's just pick one cycle based on ID
 		const gradients = [
 			"bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500", // Red/Purple
 			"bg-gradient-to-r from-yellow-400 via-green-400 to-teal-400", // Yellow/Green
@@ -302,6 +369,66 @@ export default function FriendSearchPage() {
 		);
 	};
 
+	// Render Request Card
+	const RequestCard = ({ req }: { req: FriendRequest }) => {
+		const user = req.user;
+		return (
+			<div className="rounded-full p-1 pl-2 pr-2 mb-3 shadow-sm text-white bg-gradient-to-r from-orange-400 to-pink-500">
+				<div className="flex items-center justify-between bg-white/10 rounded-full p-2 h-20">
+					{/* Left: Avatar + Info */}
+					<div className="flex items-center gap-3 flex-1 overflow-hidden">
+						{/* Avatar */}
+						<div className="h-12 w-12 rounded-full bg-slate-300 border-2 border-white/50 shrink-0 overflow-hidden">
+							{user.image ? (
+								<>
+									{/* eslint-disable @next/next/no-img-element */}
+									{/* biome-ignore lint/performance/noImgElement: dynamic content */}
+									<img
+										src={user.image}
+										alt={user.name}
+										className="h-full w-full object-cover"
+									/>
+									{/* eslint-enable @next/next/no-img-element */}
+								</>
+							) : (
+								<User className="h-full w-full p-2 text-white/50" />
+							)}
+						</div>
+						{/* Text */}
+						<div className="flex flex-col min-w-0">
+							<div className="flex items-baseline gap-2">
+								<span className="font-bold text-base truncate shadow-black drop-shadow-sm">
+									{user.name}
+								</span>
+							</div>
+							<div className="text-xs font-medium opacity-90 mt-0.5">
+								友達申請が届いています
+							</div>
+						</div>
+					</div>
+
+					{/* Right: Buttons */}
+					<div className="shrink-0 ml-2 flex gap-2">
+						<button
+							type="button"
+							onClick={() => handleDecline(req.id)}
+							className="bg-white/20 text-white p-2 rounded-full hover:bg-white/30 transition-colors"
+						>
+							<X className="w-5 h-5" />
+						</button>
+						<button
+							type="button"
+							onClick={() => handleAccept(req.id)}
+							className="bg-blue-500 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-md active:opacity-80 transition-opacity flex items-center gap-1"
+						>
+							<Check className="w-4 h-4" /> 承認
+						</button>
+					</div>
+				</div>
+			</div>
+		);
+	};
+
 	return (
 		<div className="fixed inset-0 z-50 bg-[#F2F2F7] overflow-y-auto font-sans text-slate-900">
 			{/* Header */}
@@ -334,14 +461,31 @@ export default function FriendSearchPage() {
 
 			{/* Body */}
 			<div className="p-4 pt-2">
-				{!isSearching && history.length > 0 && query.length === 0 ? (
+				{!isSearching && query.length === 0 ? (
 					<>
-						<h2 className="text-xs font-bold text-gray-500 mb-3 ml-1">
-							検索履歴一覧
-						</h2>
-						{history.map((user) => (
-							<UserCard key={`history-${user.id}`} user={user} />
-						))}
+						{/* Requests List */}
+						{requests.length > 0 && (
+							<div className="mb-6">
+								<h2 className="text-xs font-bold text-gray-500 mb-3 ml-1">
+									友達リクエスト ({requests.length})
+								</h2>
+								{requests.map((req) => (
+									<RequestCard key={req.id} req={req} />
+								))}
+							</div>
+						)}
+
+						{/* History */}
+						{history.length > 0 && (
+							<>
+								<h2 className="text-xs font-bold text-gray-500 mb-3 ml-1">
+									検索履歴一覧
+								</h2>
+								{history.map((user) => (
+									<UserCard key={`history-${user.id}`} user={user} />
+								))}
+							</>
+						)}
 					</>
 				) : (
 					// Search Results

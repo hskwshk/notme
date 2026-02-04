@@ -37,7 +37,7 @@ export default function LoginPage() {
 			if (!exists) {
 				// User not found
 				setError(
-					"入力されたメールアドレスは登録されていません。新規登録をお願いします。",
+					"入力されたユーザーIDは登録されていません。新規登録をお願いします。",
 				);
 				triggerShake();
 				setIsLoading(false);
