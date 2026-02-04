@@ -175,11 +175,11 @@ export default function RecordPage() {
 				</button>
 
 				{/* Record List */}
-				<div className="w-full mt-4">
+				<div className="w-full mt-4 mb-8">
 					<h2 className="text-center text-sm font-bold text-gray-700 mb-6">
 						今日の運動記録
 					</h2>
-					<div className="relative pl-6 border-l-2 border-gray-200 ml-4 max-h-[300px] overflow-y-auto pr-2">
+					<div className="relative pl-10 border-l-2 border-gray-200 ml-4 max-h-[300px] overflow-y-auto pr-6">
 						{data.records.length === 0 ? (
 							<p className="text-gray-400 text-sm py-4">
 								今日の記録はまだありません
@@ -223,7 +223,7 @@ export default function RecordPage() {
 				</div>
 
 				{/* Total Time */}
-				<div className="flex items-center gap-2 mt-4 pb-8">
+				<div className="flex items-center gap-2 mt-4 mb-4 pb-8">
 					<span className="text-lg font-bold text-gray-800">合計時間 :</span>
 					<span className="text-3xl font-bold text-gray-800">
 						{data.totalDuration}分
