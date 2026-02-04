@@ -24,7 +24,7 @@ export function LevelProgress({
 	);
 
 	return (
-		<div className="bg-gradient-to-r from-sky-400 to-cyan-300 text-white rounded-[15px] px-3 py-2 shadow-md flex items-center justify-between relative overflow-visible mt-6">
+		<div className="bg-white text-black rounded-[15px] px-3 py-2 shadow-md flex items-center justify-between relative overflow-visible mt-6">
 			{/* Content */}
 			<div className="flex-1 z-10 pr-4">
 				<div className="flex items-baseline gap-2">
@@ -41,7 +41,7 @@ export function LevelProgress({
 					</p>
 				</div>
 
-				<div className="h-3 w-full bg-white/30 rounded-full overflow-hidden backdrop-blur-sm">
+				<div className="h-3 w-full bg-[#BDE6FF] rounded-full overflow-hidden backdrop-blur-sm">
 					<div
 						className="h-full bg-lime-400 rounded-full transition-all duration-500 ease-out shadow-[0_0_10px_rgba(163,230,53,0.5)]"
 						style={{ width: `${percentage}%` }}

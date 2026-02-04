@@ -167,7 +167,7 @@ export default function CalendarPage() {
 						</div>
 					)} */}
 					{/* テスト用継続日数 */}
-					<div className="bg-sky-400 text-white px-3 py-1.5 rounded-[10px] font-bold flex items-center gap-1 shadow-sm">
+					<div className="bg-gradient-to-b from-[#83C7EF] to-[#9DD7DF] text-white px-3 py-1.5 rounded-[10px] font-bold flex items-center gap-1 shadow-sm">
 						<span className="text-orange-300 text-sm">
 							<Image
 								src="/sample/fire.png"
@@ -204,7 +204,7 @@ export default function CalendarPage() {
 
 			{/* カレンダー */}
 			<div>
-				<div className="border-1 border-slate-800 rounded-[15px] py-4 px-1 bg-[#F1FAFF] relative overflow-hidden shadow-sm">
+				<div className="border-1 border-slate-800 rounded-[15px] py-4 px-1 bg-white relative overflow-hidden shadow-sm">
 					{/* 曜日 */}
 					<div className="grid grid-cols-7 mb-4">
 						{DAYS_OF_WEEK.map((day, i) => (
@@ -272,15 +272,15 @@ export default function CalendarPage() {
 										key={`curr-${d}`}
 										className="flex flex-col items-center justify-start gap-1 h-16 relative group"
 									>
-										{/* Day Number */}
+										{/* 日付 */}
 										<span className={`text-xl font-bold ${dayLabelColor} z-10`}>
 											{d}
 										</span>
 
-										{/* Circle Placeholder */}
+										{/* スタンプ用丸 */}
 										<div className="w-8 h-8 rounded-full bg-slate-300 absolute top-8" />
 
-										{/* Stamp Overlay */}
+										{/* スタンプオーバーレイ */}
 										{dayData?.stamp?.imageUrl && (
 											<div className="absolute top-4 w-14 h-14 z-20 transform -rotate-6 hover:scale-110 transition-transform">
 												<Image
@@ -331,7 +331,7 @@ export default function CalendarPage() {
 				/>
 
 				{/* 統計カード */}
-				<div className="bg-gradient-to-r from-sky-400 to-cyan-300 text-white rounded-[15px] p-2 shadow-md flex justify-between items-center text-center">
+				<div className="bg-gradient-to-b from-[#83C7EF] to-[#9DD7DF] text-white rounded-[15px] p-2 shadow-md flex justify-between items-center text-center">
 					<div className="flex-1">
 						<div className="text-[12px] font-bold opacity-90 mb-1 flex items-center justify-center gap-1">
 							<span className="text-orange-300">
