@@ -19,15 +19,5 @@ export const auth = betterAuth({
 		enabled: true,
 		requireEmailVerification: false, // Optional: based on requirements
 	},
-	user: {
-		additionalFields: {
-			username: {
-				type: "string",
-				unique: true,
-				input: true, // Allow input during sign up
-				required: true,
-			},
-		},
-	},
 	plugins: [username()],
 });
