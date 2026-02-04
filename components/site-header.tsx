@@ -1,12 +1,21 @@
 "use client";
 
 import Link from "next/link";
-
+import { usePathname } from "next/navigation";
 import { signOut } from "@/lib/auth-actions";
 import { authClient } from "@/lib/auth-client";
 
 export function SiteHeader() {
+	const pathname = usePathname();
 	const { data: session, isPending } = authClient.useSession();
+
+	// Hide Header on specific pages that have their own header
+	const hiddenRoutes = ["/", "/friends", "/profile", "/calendar", "/record"];
+	const isHidden = hiddenRoutes.some(
+		(route) => pathname === route || pathname?.startsWith(`${route}/`),
+	);
+
+	if (isHidden) return null;
 
 	return (
 		<header className="border-b border-zinc-200 bg-white/70 backdrop-blur dark:border-zinc-800 dark:bg-black/40">
