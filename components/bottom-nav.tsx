@@ -7,8 +7,8 @@ import { usePathname } from "next/navigation";
 export function BottomNav() {
 	const pathname = usePathname();
 
-	// Hide Footer on specific pages
-	const hiddenRoutes = ["/friends", "/profile", "/calendar", "/record"];
+	// Hide Footer on specific pages (Auth flow)
+	const hiddenRoutes = ["/login", "/signup"];
 	const isHidden = hiddenRoutes.some(
 		(route) => pathname === route || pathname?.startsWith(`${route}/`),
 	);

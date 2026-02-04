@@ -79,7 +79,7 @@ export default function ProfilePage() {
 	const scaleMax = Math.max(profile.stats.monthMaxMinutes, localMax, 30); // Min scale 30m
 
 	return (
-		<div className="bg-zinc-50 min-h-screen pb-24 relative">
+		<div className="relative">
 			{/* Graph Help Modal */}
 			{showGraphHelp && (
 				// biome-ignore lint/a11y/useKeyWithClickEvents: Modal backdrop

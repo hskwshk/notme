@@ -148,7 +148,7 @@ export default function CalendarPage() {
 		);
 
 	return (
-		<div className="min-h-screen bg-[#F2F2F7] pb-32 font-sans text-slate-900">
+		<div className="font-sans text-slate-900">
 			{/* ヘッダー（月 / 継続記録） */}
 			<div className="pt-8 pb-[20px] flex items-center justify-between">
 				<div className="flex items-center gap-1">
