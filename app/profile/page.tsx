@@ -4,6 +4,7 @@ import { Clock, Edit, Flame, Trophy, User as UserIcon } from "lucide-react"; // 
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { BottomNav } from "@/components/bottom-nav";
 import { apiClient } from "@/lib/api-client";
 
 // Types matching API response
@@ -129,7 +130,7 @@ export default function ProfilePage() {
 				<div className="absolute top-0 left-0 w-full h-full border-2 border-blue-400/30 rounded-3xl pointer-events-none" />
 
 				{/* Icon */}
-				<div className="w-full aspect-square max-w-[200px] mx-auto mb-4 rounded-2xl overflow-hidden bg-gray-200">
+				<div className="relative w-full aspect-square max-w-[200px] mx-auto mb-4 rounded-2xl overflow-hidden bg-gray-200">
 					{profile.user.image ? (
 						<Image
 							src={profile.user.image}
@@ -312,7 +313,7 @@ export default function ProfilePage() {
 
 				<div className="text-center">
 					<Link
-						href="/profile/edit"
+						href="/profile/stamps/edit"
 						className="inline-block bg-blue-400/20 text-blue-500 text-xs font-bold px-6 py-2 rounded-full hover:bg-blue-400/30 transition-colors"
 					>
 						スタンプを変更する
@@ -359,6 +360,7 @@ export default function ProfilePage() {
 					</span>
 				</div>
 			</div>
+			<BottomNav />
 		</div>
 	);
 }

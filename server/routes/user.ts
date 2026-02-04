@@ -1,9 +1,11 @@
 import { zValidator } from "@hono/zod-validator";
+import { hashPassword } from "better-auth/crypto";
 import { and, eq, gte, ilike, or, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { HonoEnv } from "@/server/types";
 import {
+	account,
 	activityLog,
 	friendship,
 	stamp,
@@ -425,6 +427,26 @@ const app = new Hono<HonoEnv>()
 			favoriteStamps: favoriteStamps,
 		});
 	})
+	.get("/me/stamps", async (c) => {
+		const db = c.get("db");
+		const user = c.get("user");
+
+		if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+		const userStamps = await db
+			.select({
+				id: stamp.id,
+				name: stamp.name,
+				imageUrl: stamp.imageUrl,
+				isFavorite: userStamp.isFavorite,
+				favoriteOrder: userStamp.favoriteOrder,
+			})
+			.from(userStamp)
+			.innerJoin(stamp, eq(userStamp.stampId, stamp.id))
+			.where(eq(userStamp.userId, user.id));
+
+		return c.json({ stamps: userStamps });
+	})
 	.put(
 		"/me/profile/favorite-stamps",
 		zValidator(
@@ -508,15 +530,29 @@ const app = new Hono<HonoEnv>()
 			expiresAt: null,
 		};
 
-		const uploaded = await fileRepository.saveBlobFile(blobFile);
-		const imageUrl = `${baseUrl}/${uploaded.bucket}/${uploaded.key}`;
+		try {
+			const uploaded = await fileRepository.saveBlobFile(blobFile);
+			const imageUrl =
+				!baseUrl || baseUrl.includes("barbar.foo")
+					? `/${uploaded.bucket}/${uploaded.key}`
+					: `${baseUrl}/${uploaded.bucket}/${uploaded.key}`;
 
-		await db
-			.update(userTable)
-			.set({ image: imageUrl })
-			.where(eq(userTable.id, sessionUser.id));
+			await db
+				.update(userTable)
+				.set({ image: imageUrl })
+				.where(eq(userTable.id, sessionUser.id));
 
-		return c.json({ url: imageUrl });
+			return c.json({ url: imageUrl });
+		} catch (error) {
+			console.error("Backend Upload Error:", error);
+			return c.json(
+				{
+					error: "Internal Server Error during file upload",
+					details: error instanceof Error ? error.message : String(error),
+				},
+				500,
+			);
+		}
 	})
 	.put(
 		"/me/profile",
@@ -532,7 +568,7 @@ const app = new Hono<HonoEnv>()
 		async (c) => {
 			const db = c.get("db");
 			const sessionUser = c.get("user");
-			const { name, username, characterName } = c.req.valid("json");
+			const { name, username, characterName, password } = c.req.valid("json");
 
 			if (!sessionUser) return c.json({ error: "Unauthorized" }, 401);
 
@@ -563,7 +599,14 @@ const app = new Hono<HonoEnv>()
 				})
 				.where(eq(userTable.id, user.id));
 
-			// Password update skipped (see previous notes)
+			// Update Password if provided
+			if (password) {
+				const hashedPassword = await hashPassword(password);
+				await db
+					.update(account)
+					.set({ password: hashedPassword })
+					.where(eq(account.userId, user.id));
+			}
 
 			return c.json({ success: true });
 		},
