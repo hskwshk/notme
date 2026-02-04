@@ -62,7 +62,7 @@ export default function Notice() {
 
 	return (
 		<>
-			<main className="my-[70px]">
+			<main>
 				<Top name={pageName} />
 
 				<div className="flex flex-col items-center">
