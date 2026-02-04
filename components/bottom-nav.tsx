@@ -7,6 +7,14 @@ import { usePathname } from "next/navigation";
 export function BottomNav() {
 	const pathname = usePathname();
 
+	// Hide Footer on specific pages
+	const hiddenRoutes = ["/friends", "/profile", "/calendar", "/record"];
+	const isHidden = hiddenRoutes.some(
+		(route) => pathname === route || pathname?.startsWith(`${route}/`),
+	);
+
+	if (isHidden) return null;
+
 	const navItems = [
 		{ label: "友達", icon: UserPlus, href: "/friends/search" },
 		{ label: "カレンダー", icon: CalendarDays, href: "/calendar" },

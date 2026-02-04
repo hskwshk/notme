@@ -283,9 +283,9 @@ const app = new Hono<HonoEnv>()
 
 		const friends = friendsRecords.map((f) => {
 			if (f.userId === user.id) {
-				return f.friend;
+				return { ...f.friend, role: "following" as const };
 			}
-			return f.user;
+			return { ...f.user, role: "follower" as const };
 		});
 
 		return c.json({ friends });
