@@ -46,13 +46,16 @@ const homeRoute = new Hono<HonoEnv>()
 		);
 
 		// 3. Activity Stats (Today) & Stamp Logic
-		const today = new Date()
-			.toLocaleDateString("ja-JP", {
-				year: "numeric",
-				month: "2-digit",
-				day: "2-digit",
-			})
-			.replaceAll("/", "-");
+		const getJstDate = (d: Date) => {
+			return d
+				.toLocaleDateString("ja-JP", {
+					year: "numeric",
+					month: "2-digit",
+					day: "2-digit",
+				})
+				.replaceAll("/", "-");
+		};
+		const today = getJstDate(new Date());
 
 		let currentLog = await db.query.activityLog.findFirst({
 			where: and(eq(activityLog.userId, user.id), eq(activityLog.date, today)),
@@ -90,7 +93,7 @@ const homeRoute = new Hono<HonoEnv>()
 		// Fetch last 30 days logs
 		const thirtyDaysAgo = new Date();
 		thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-		const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split("T")[0];
+		const thirtyDaysAgoStr = getJstDate(thirtyDaysAgo);
 
 		const recentLogs = await db
 			.select()
@@ -113,12 +116,15 @@ const homeRoute = new Hono<HonoEnv>()
 		for (let i = 4; i >= 0; i--) {
 			const d = new Date();
 			d.setDate(d.getDate() - i);
-			const dateStr = d.toISOString().split("T")[0];
-			// If i == 0 it's today, i == 1 it's yesterday, etc.
+			const dateStr = getJstDate(d);
+			const month = d.getMonth() + 1;
+			const day = d.getDate();
+			const dayOfWeek = ["日", "月", "火", "水", "木", "金", "土"][d.getDay()];
+
 			let label = "";
 			if (i === 0) label = "今日";
 			else if (i === 1) label = "昨日";
-			else label = `${i}日前`;
+			else label = `${month}/${day}(${dayOfWeek})`;
 
 			const log = recentLogs.find((l) => l.date === dateStr);
 			graphDataRaw.push({
@@ -210,15 +216,27 @@ const homeRoute = new Hono<HonoEnv>()
 							),
 						);
 
+					const friendMonthMaxMinutes = friendRecentLogs.reduce(
+						(max, log) =>
+							log.durationMinutes > max ? log.durationMinutes : max,
+						0,
+					);
+
 					const friendGraphData = [];
 					for (let i = 4; i >= 0; i--) {
 						const d = new Date();
 						d.setDate(d.getDate() - i);
-						const dateStr = d.toISOString().split("T")[0];
+						const dateStr = getJstDate(d);
+						const month = d.getMonth() + 1;
+						const day = d.getDate();
+						const dayOfWeek = ["日", "月", "火", "水", "木", "金", "土"][
+							d.getDay()
+						];
+
 						let label = "";
 						if (i === 0) label = "今日";
 						else if (i === 1) label = "昨日";
-						else label = `${i}日前`;
+						else label = `${month}/${day}(${dayOfWeek})`;
 
 						const log = friendRecentLogs.find((l) => l.date === dateStr);
 						friendGraphData.push({
@@ -241,6 +259,7 @@ const homeRoute = new Hono<HonoEnv>()
 							maxStreak: friendProfile.maxStreak,
 							todayExerciseMinutes: friendTodayLog?.durationMinutes || 0,
 							maxExerciseMinutes: friendProfile.maxMinutes,
+							monthMaxMinutes: friendMonthMaxMinutes,
 							graphData: friendGraphData,
 						},
 						quote: quote ? { text: quote.content } : null,

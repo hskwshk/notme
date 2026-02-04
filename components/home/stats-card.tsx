@@ -1,6 +1,7 @@
 "use client";
 
 import { Flame, Maximize2, MoveUpRight } from "lucide-react";
+import { UserGraph } from "./user-graph";
 
 interface GraphPoint {
 	label: string;
@@ -40,9 +41,6 @@ export function StatsCard({
 
 	const gradientClass = getGradient(level);
 
-	// Y-axis scale max (at least 60 mins or month max)
-	const scaleMax = Math.max(monthMaxMinutes, 60);
-
 	return (
 		<div
 			className={`rounded-3xl p-[12px] text-white shadow-lg ${gradientClass} relative overflow-hidden`}
@@ -71,48 +69,12 @@ export function StatsCard({
 			{/* メインコンテンツ */}
 			<div className="flex gap-4 mb-1 items-stretch">
 				{/* グラフ */}
-				<div className="flex-1 flex flex-col justify-end pb-2 pr-2 relative h-[120px] w-full max-w-[55%]">
-					{/* Y-axis line (max value) */}
-					<div className="absolute top-0 left-0 w-full border-t border-white/30 text-[10px] text-white/70">
-						<span className="absolute -top-4 left-0">{scaleMax}min</span>
-					</div>
-
-					<div className="flex items-end justify-between h-full gap-1">
-						{graphData.map((point, i) => {
-							const heightPercent = Math.min(
-								(point.minutes / scaleMax) * 100,
-								100,
-							);
-							// Ensure a tiny bit of height so it's visible even if 0
-							const displayHeight = Math.max(heightPercent, 2);
-							const isToday = i === graphData.length - 1;
-
-							return (
-								<div
-									key={point.label || i}
-									className="flex flex-col items-center justify-end h-full flex-1 gap-1"
-								>
-									<div className="w-full h-full flex items-end justify-center relative group">
-										<div
-											className={`w-3 sm:w-4 rounded-t-sm transition-all duration-500 ${
-												isToday ? "bg-yellow-300" : "bg-white/50"
-											}`}
-											style={{ height: `${displayHeight}%` }}
-										/>
-										{/* Tooltip for minutes */}
-										{point.minutes > 0 && (
-											<div className="absolute -top-6 text-[10px] font-bold bg-black/50 px-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-												{point.minutes}
-											</div>
-										)}
-									</div>
-									<span className="text-[9px] opacity-80 whitespace-nowrap overflow-visible">
-										{point.label}
-									</span>
-								</div>
-							);
-						})}
-					</div>
+				<div className="flex-1 max-w-[55%]">
+					<UserGraph
+						graphData={graphData}
+						scaleMax={maxMinutes} // 以前のご要望通り自己ベストを100%とする
+						isPrimary={true}
+					/>
 				</div>
 
 				{/* ステータステキスト */}
