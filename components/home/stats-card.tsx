@@ -77,7 +77,7 @@ export function StatsCard({
 						<span className="absolute -top-4 left-0">{scaleMax}min</span>
 					</div>
 
-					<div className="flex items-end justify-between h-full pt-4 gap-1">
+					<div className="flex items-end justify-between h-full gap-1">
 						{graphData.map((point, i) => {
 							const heightPercent = Math.min(
 								(point.minutes / scaleMax) * 100,
