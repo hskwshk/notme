@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { BottomNav } from "@/components/bottom-nav";
 import { DailyGoalManager } from "@/components/daily-goal-manager";
 import {
 	FriendActivityCard,
@@ -45,9 +46,9 @@ export default function Home() {
 		const fetchData = async () => {
 			const res = await apiClient.api.home.$get();
 			if (res.ok) {
-				// biome-ignore lint/suspicious/noExplicitAny: Bypassing excessively deep type instantiation error
-				 
-				const json = (await res.json()) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+				// biome-ignore lint/suspicious/noExplicitAny: Hono RPC type instantiation is too deep
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				const json = (await res.json()) as any;
 				if ("error" in json) return;
 				setData(json as HomeData);
 			} else if (res.status === 401) {
@@ -104,6 +105,7 @@ export default function Home() {
 					)}
 				</main>
 			</div>
+			<BottomNav />
 		</div>
 	);
 }
