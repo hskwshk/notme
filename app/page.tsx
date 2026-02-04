@@ -46,7 +46,6 @@ export default function Home() {
 			const res = await apiClient.api.home.$get();
 			if (res.ok) {
 				// biome-ignore lint/suspicious/noExplicitAny: Bypassing excessively deep type instantiation error
-				 
 				const json = (await res.json()) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 				if ("error" in json) return;
 				setData(json as HomeData);
