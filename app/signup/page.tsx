@@ -9,6 +9,7 @@ import { signUpWithEmail } from "@/lib/auth-actions";
 export default function SignupPage() {
 	const router = useRouter();
 	const [name, setName] = useState("");
+	const [username, setUsername] = useState("");
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [error, setError] = useState<string | null>(null);
@@ -21,6 +22,7 @@ export default function SignupPage() {
 
 		const result = await signUpWithEmail({
 			name,
+			username,
 			email,
 			password,
 		});
@@ -46,6 +48,17 @@ export default function SignupPage() {
 						required
 						value={name}
 						onChange={(event) => setName(event.target.value)}
+					/>
+				</div>
+				<div>
+					<label htmlFor="username">Username (User ID)</label>
+					<input
+						id="username"
+						required
+						value={username}
+						onChange={(event) => setUsername(event.target.value)}
+						placeholder="e.g. user123"
+						className="w-full px-3 py-2 border rounded"
 					/>
 				</div>
 				<div>

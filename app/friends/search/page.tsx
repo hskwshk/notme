@@ -9,6 +9,7 @@ import { apiClient } from "@/lib/api-client";
 interface SearchUser {
 	id: string;
 	name: string;
+	username: string | null;
 	image: string | null;
 	currentStreak: number;
 	friendshipStatus: "none" | "pending" | "accepted";
@@ -316,14 +317,12 @@ export default function FriendSearchPage() {
 								<span className="font-bold text-base truncate shadow-black drop-shadow-sm">
 									{user.name}
 								</span>
-								<span className="text-[10px] opacity-80 truncate hidden sm:inline">
-									({user.id.slice(0, 8)}...)
-								</span>
+								{user.username && (
+									<span className="text-[10px] opacity-80 truncate">
+										ID: {user.username}
+									</span>
+								)}
 							</div>
-							{/* Mobile ID: simplified */}
-							<span className="text-[10px] opacity-80 truncate sm:hidden block">
-								(ID: {user.id.slice(0, 6)}...)
-							</span>
 							<div className="text-xs font-medium opacity-90 mt-0.5">
 								連続日数 : {user.currentStreak}日
 							</div>
@@ -452,7 +451,7 @@ export default function FriendSearchPage() {
 						type="text"
 						value={query}
 						onChange={(e) => setQuery(e.target.value)}
-						placeholder="ユーザ名またはユーザーIDを入力"
+						placeholder="ユーザー名または表示名を入力"
 						className="w-full bg-white rounded-full py-2.5 pl-4 pr-10 text-sm shadow-sm border-none outline-none focus:ring-2 focus:ring-blue-400/50"
 					/>
 					<Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />

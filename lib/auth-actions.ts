@@ -25,11 +25,13 @@ export async function signInWithEmail(params: {
 
 export async function signUpWithEmail(params: {
 	name: string;
+	username: string;
 	email: string;
 	password: string;
 }): Promise<AuthResult> {
 	const { error } = await authClient.signUp.email({
 		name: params.name,
+		username: params.username,
 		email: params.email,
 		password: params.password,
 	});
