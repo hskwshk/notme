@@ -27,14 +27,7 @@ export async function signInWithUsername(params: {
 	username: string;
 	password: string;
 }): Promise<AuthResult> {
-	const { error } = await (
-		authClient.signIn as unknown as {
-			username: (p: {
-				username: string;
-				password: string;
-			}) => Promise<{ error: { message: string } | null }>;
-		}
-	).username({
+	const { error } = await authClient.signIn.username({
 		username: params.username,
 		password: params.password,
 	});

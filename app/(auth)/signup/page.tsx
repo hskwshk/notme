@@ -100,7 +100,6 @@ export default function SignupPage() {
 				email: dummyEmail,
 				password,
 				name: name || username, // Default to username if name is empty
-				// @ts-expect-error: better-auth types missing username in signUp
 				username,
 				image: imageUrl || undefined,
 			});
