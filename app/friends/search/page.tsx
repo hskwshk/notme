@@ -1,7 +1,6 @@
 "use client";
 
-import { Check, ChevronLeft, Search, User, UserCheck, X } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { Check, Search, User, UserCheck, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Top } from "@/components/top";
 import { apiClient } from "@/lib/api-client";
@@ -30,7 +29,6 @@ interface FriendRequest {
 }
 
 export default function FriendSearchPage() {
-	const router = useRouter();
 	const [query, setQuery] = useState("");
 	const [results, setResults] = useState<SearchUser[]>([]);
 	const [history, setHistory] = useState<SearchUser[]>([]); // Stored in local storage
@@ -280,22 +278,19 @@ export default function FriendSearchPage() {
 	};
 
 	// Render User Card
-	const UserCard = ({ user }: { user: SearchUser }) => {
-		// Random gradient or deterministic based on ID
-		const gradients = [
-			"bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500", // Red/Purple
-			"bg-gradient-to-r from-yellow-400 via-green-400 to-teal-400", // Yellow/Green
-			"bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400", // Blue/Cyan
-			"bg-gradient-to-r from-red-400 to-orange-400", // Red/Orange
+	const UserCard = ({ user, index }: { user: SearchUser; index: number }) => {
+		const patterns = [
+			"from-[#FF005C]", // Red/Pink
+			"from-[#E2FF00]", // Yellow/Green
+			"from-[#00CCFF]", // Blue/Cyan
 		];
-		const gradientIndex = user.id.charCodeAt(0) % gradients.length;
-		const gradientClass = gradients[gradientIndex];
+		const pattern = patterns[index % patterns.length];
 
 		return (
 			<div
-				className={`rounded-full p-1 pl-2 pr-2 mb-3 shadow-sm text-white ${gradientClass}`}
+				className={`rounded-full p-1 pl-2 pr-2 mb-3 shadow-sm text-slate-900 bg-gradient-to-r ${pattern} via-white via-70% to-white`}
 			>
-				<div className="flex items-center justify-between bg-white/10 rounded-full p-2 h-20">
+				<div className="flex items-center justify-between bg-white/20 rounded-full p-2 h-20">
 					{/* Left: Avatar + Info */}
 					<div className="flex items-center gap-3 flex-1 overflow-hidden">
 						{/* Avatar */}
@@ -312,22 +307,22 @@ export default function FriendSearchPage() {
 									{/* eslint-enable @next/next/no-img-element */}
 								</>
 							) : (
-								<User className="h-full w-full p-2 text-white/50" />
+								<User className="h-full w-full p-2 text-slate-400" />
 							)}
 						</div>
 						{/* Text */}
 						<div className="flex flex-col min-w-0">
 							<div className="flex items-baseline gap-2">
-								<span className="font-bold text-base truncate shadow-black drop-shadow-sm">
+								<span className="font-bold text-base truncate">
 									{user.name}
 								</span>
 								{user.username && (
-									<span className="text-[10px] opacity-80 truncate">
+									<span className="text-[10px] text-slate-500 truncate">
 										ID: {user.username}
 									</span>
 								)}
 							</div>
-							<div className="text-xs font-medium opacity-90 mt-0.5">
+							<div className="text-xs font-medium text-slate-500 mt-0.5">
 								連続日数 : {user.currentStreak}日
 							</div>
 						</div>
@@ -376,8 +371,8 @@ export default function FriendSearchPage() {
 	const RequestCard = ({ req }: { req: FriendRequest }) => {
 		const user = req.user;
 		return (
-			<div className="rounded-full p-1 pl-2 pr-2 mb-3 shadow-sm text-white bg-gradient-to-r from-orange-400 to-pink-500">
-				<div className="flex items-center justify-between bg-white/10 rounded-full p-2 h-20">
+			<div className="rounded-full p-1 pl-2 pr-2 mb-3 shadow-sm text-slate-900 bg-gradient-to-r from-orange-400 via-white via-70% to-white">
+				<div className="flex items-center justify-between bg-white/20 rounded-full p-2 h-20">
 					{/* Left: Avatar + Info */}
 					<div className="flex items-center gap-3 flex-1 overflow-hidden">
 						{/* Avatar */}
@@ -394,17 +389,17 @@ export default function FriendSearchPage() {
 									{/* eslint-enable @next/next/no-img-element */}
 								</>
 							) : (
-								<User className="h-full w-full p-2 text-white/50" />
+								<User className="h-full w-full p-2 text-slate-400" />
 							)}
 						</div>
 						{/* Text */}
 						<div className="flex flex-col min-w-0">
 							<div className="flex items-baseline gap-2">
-								<span className="font-bold text-base truncate shadow-black drop-shadow-sm">
+								<span className="font-bold text-base truncate">
 									{user.name}
 								</span>
 							</div>
-							<div className="text-xs font-medium opacity-90 mt-0.5">
+							<div className="text-xs font-medium text-slate-500 mt-0.5">
 								友達申請が届いています
 							</div>
 						</div>
@@ -415,7 +410,7 @@ export default function FriendSearchPage() {
 						<button
 							type="button"
 							onClick={() => handleDecline(req.id)}
-							className="bg-white/20 text-white p-2 rounded-full hover:bg-white/30 transition-colors"
+							className="text-slate-400 p-2 rounded-full hover:bg-slate-100 transition-colors"
 						>
 							<X className="w-5 h-5" />
 						</button>
@@ -433,22 +428,9 @@ export default function FriendSearchPage() {
 	};
 
 	return (
-		<div className="fixed inset-0 z-50 overflow-y-auto font-sans text-slate-900">
+		<div className="fixed inset-0 z-50 overflow-y-auto font-sans text-slate-900 bg-white">
 			{/* Header */}
-			<div className="sticky top-0 z-50 pt-2 pb-2 px-4 shadow-sm">
-				{/* Status Bar filler handled by padding usually, but for fixed overlay just top padding */}
-				{/* <div className="h-4" />
-				<div className="relative flex items-center justify-center p-2 mb-2">
-					<button
-						type="button"
-						onClick={() => router.push("/")}
-						className="absolute left-0 p-2 text-gray-500"
-					>
-						<ChevronLeft className="h-6 w-6" />
-					</button>
-					<h1 className="text-lg font-bold text-gray-700">検索</h1>
-				</div> */}
-
+			<div className="sticky top-0 z-50 pt-2 pb-2 px-4 shadow-sm bg-white">
 				<Top name={pageName} />
 
 				{/* Search Bar */}
@@ -458,7 +440,7 @@ export default function FriendSearchPage() {
 						value={query}
 						onChange={(e) => setQuery(e.target.value)}
 						placeholder="ユーザー名または表示名を入力"
-						className="w-full bg-white rounded-full py-2.5 pl-4 pr-10 text-sm shadow-sm border-none outline-none focus:ring-2 focus:ring-blue-400/50"
+						className="w-full bg-white rounded-full py-2.5 pl-4 pr-10 text-sm shadow-sm border border-slate-200 outline-none focus:ring-2 focus:ring-blue-400/50"
 					/>
 					<Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
 				</div>
@@ -486,8 +468,8 @@ export default function FriendSearchPage() {
 								<h2 className="text-xs font-bold text-gray-500 mb-3 ml-1">
 									検索履歴一覧
 								</h2>
-								{history.map((user) => (
-									<UserCard key={`history-${user.id}`} user={user} />
+								{history.map((user, i) => (
+									<UserCard key={`history-${user.id}`} user={user} index={i} />
 								))}
 							</>
 						)}
@@ -500,8 +482,8 @@ export default function FriendSearchPage() {
 								{isLoading ? "検索中..." : "検索結果"}
 							</h2>
 						)}
-						{results.map((user) => (
-							<UserCard key={user.id} user={user} />
+						{results.map((user, i) => (
+							<UserCard key={user.id} user={user} index={i} />
 						))}
 						{!isLoading && query.length > 0 && results.length === 0 && (
 							<p className="text-center text-gray-400 text-sm mt-10">
