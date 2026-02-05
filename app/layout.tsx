@@ -1,5 +1,5 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+// import type { Metadata } from "next";
+// import { Geist, Geist_Mono } from "next/font/google";
 
 import { BottomNav } from "@/components/bottom-nav";
 // import { SiteHeader } from "@/components/site-header";
