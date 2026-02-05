@@ -3,7 +3,10 @@
 import { Check, ChevronLeft, Search, User, UserCheck, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Top } from "@/components/top";
 import { apiClient } from "@/lib/api-client";
+
+const pageName = "検索";
 
 // Types matching API response
 interface SearchUser {
@@ -430,11 +433,11 @@ export default function FriendSearchPage() {
 	};
 
 	return (
-		<div className="fixed inset-0 z-50 bg-[#F2F2F7] overflow-y-auto font-sans text-slate-900">
+		<div className="fixed inset-0 z-50 overflow-y-auto font-sans text-slate-900">
 			{/* Header */}
-			<div className="sticky top-0 z-50 bg-[#F2F2F7] pt-2 pb-2 px-4 shadow-sm">
+			<div className="sticky top-0 z-50 pt-2 pb-2 px-4 shadow-sm">
 				{/* Status Bar filler handled by padding usually, but for fixed overlay just top padding */}
-				<div className="h-4" />
+				{/* <div className="h-4" />
 				<div className="relative flex items-center justify-center p-2 mb-2">
 					<button
 						type="button"
@@ -444,7 +447,9 @@ export default function FriendSearchPage() {
 						<ChevronLeft className="h-6 w-6" />
 					</button>
 					<h1 className="text-lg font-bold text-gray-700">検索</h1>
-				</div>
+				</div> */}
+
+				<Top name={pageName} />
 
 				{/* Search Bar */}
 				<div className="relative">
