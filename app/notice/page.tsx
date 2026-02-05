@@ -77,10 +77,10 @@ export default function Notice() {
 	}
 
 	return (
-		<main className="min-h-screen bg-[#ffffff]">
+		<main className="min-h-screen">
 			<Top name="通知" />
 
-			<div className="max-w-md mx-auto px-6 pt-6">
+			<div className="">
 				{/* 1. Notification ON/OFF */}
 				<NotificationManager />
 
