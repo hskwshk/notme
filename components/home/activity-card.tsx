@@ -77,7 +77,7 @@ export function ActivityCard({
 	};
 
 	return (
-		<div className="flex flex-col gap-3 px-6 mb-8 w-full max-w-md mx-auto">
+		<div className="flex flex-col gap-3 mb-8 w-full max-w-md mx-auto">
 			{/* Header: User Info */}
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-3">
