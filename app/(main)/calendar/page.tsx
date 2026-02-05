@@ -101,18 +101,6 @@ export default function CalendarPage() {
 		// For now, let's just use it.
 	}, [currentDate, triggerGacha]);
 
-	// const handlePrevMonth = () => {
-	// 	setCurrentDate(
-	// 		new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1),
-	// 	);
-	// };
-
-	// const handleNextMonth = () => {
-	// 	setCurrentDate(
-	// 		new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1),
-	// 	);
-	// };
-
 	const handleGachaDraw = async () => {
 		if (!data?.isLevelUpReady) return;
 
@@ -259,26 +247,6 @@ export default function CalendarPage() {
 					</div>
 				</div>
 			</div>
-
-			{/* Month Navigation (Invisible or swipe, but adding buttons for usability now) */}
-			{/* Ideally swipe, but adding simple arrows for now */}
-			{/* 横移動ボタン */}
-			{/* <div className="flex justify-end gap-4 mb-4">
-				<button
-					type="button"
-					onClick={handlePrevMonth}
-					className="p-2 bg-white rounded-full shadow-sm"
-				>
-					<ChevronLeft className="h-4 w-4" />
-				</button>
-				<button
-					type="button"
-					onClick={handleNextMonth}
-					className="p-2 bg-white rounded-full shadow-sm"
-				>
-					<ChevronRight className="h-4 w-4" />
-				</button>
-			</div> */}
 
 			{/* カレンダー */}
 			<div>
