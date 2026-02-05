@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { BottomNav } from "@/components/bottom-nav";
 import { ConfirmModal } from "@/components/confirm-modal";
 import { TimeScrollPicker } from "@/components/time-scroll-picker";
+import { Top } from "@/components/top";
 import { apiClient } from "@/lib/api-client";
 
 type Record = {
@@ -18,6 +19,8 @@ type RecordData = {
 	totalDuration: number;
 	records: Record[];
 };
+
+const pageName = "今日の記録";
 
 export default function RecordPage() {
 	const [hours, setHours] = useState(0);
@@ -110,9 +113,10 @@ export default function RecordPage() {
 	return (
 		<div className="min-h-screen bg-pink-50 max-w-md mx-auto">
 			{/* Header */}
-			<header className="relative flex items-center justify-center pt-8 pb-4 px-4">
+			{/* <header className="relative flex items-center justify-center pt-8 pb-4 px-4">
 				<h1 className="text-xl font-medium text-gray-700">今日の記録</h1>
-			</header>
+			</header> */}
+			<Top name={pageName} />
 
 			<main className="max-w-md mx-auto px-6 flex flex-col items-center gap-6">
 				{/* Character Card */}
@@ -242,7 +246,6 @@ export default function RecordPage() {
 				confirmText="削除する"
 				cancelText="キャンセル"
 			/>
-			<BottomNav />
 		</div>
 	);
 }
