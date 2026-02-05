@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BottomNav } from "@/components/bottom-nav";
 import { DailyGoalManager } from "@/components/daily-goal-manager";
 import {
 	FriendActivityCard,
@@ -46,9 +45,8 @@ export default function Home() {
 		const fetchData = async () => {
 			const res = await apiClient.api.home.$get();
 			if (res.ok) {
-				// biome-ignore lint/suspicious/noExplicitAny: Hono RPC type instantiation is too deep
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				const json = (await res.json()) as any;
+				// biome-ignore lint/suspicious/noExplicitAny: Bypassing excessively deep type instantiation error
+				const json = (await res.json()) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 				if ("error" in json) return;
 				setData(json as HomeData);
 			} else if (res.status === 401) {
@@ -62,16 +60,16 @@ export default function Home() {
 
 	if (!data) {
 		// Loading state
-		return <div className="min-h-screen"></div>;
+		return <div className="min-h-screen font-sans text-slate-900"></div>;
 	}
 
 	return (
-		<div className="min-h-screen pb-32 font-sans">
+		<div className="font-sans text-slate-900">
 			{/* Daily Goal Modal Manager */}
 			<DailyGoalManager />
 
 			{/* Main Content */}
-			<div className="mx-auto min-h-screen relative">
+			<div className="relative">
 				<HomeHeader hasUnreadNotifications={data.user.hasUnreadNotifications} />
 
 				<main className="space-y-6">
@@ -105,7 +103,6 @@ export default function Home() {
 					)}
 				</main>
 			</div>
-			<BottomNav />
 		</div>
 	);
 }

@@ -31,8 +31,10 @@ export default function RootLayout({
 				className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-zinc-50 text-zinc-900 antialiased`}
 			>
 				<SiteHeader />
-				{/* ページ側で個別に余白を管理できるよう、メインコンテナのパディングを最小限に。 */}
-				<main className="mx-auto w-full max-w-5xl">{children}</main>
+				{/* (main)/layout.tsx から引き継いだ余白設定を復元し、全ページで統一感を持たせる。 */}
+				<main className="mx-auto w-full max-w-5xl px-[20px] pt-4 pb-[100px]">
+					{children}
+				</main>
 				<BottomNav />
 			</body>
 		</html>

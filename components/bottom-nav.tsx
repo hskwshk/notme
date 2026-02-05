@@ -7,8 +7,13 @@ import { usePathname } from "next/navigation";
 export function BottomNav() {
 	const pathname = usePathname();
 
-	// Show Footer on all main pages
-	const isHidden = false; // Always show or add specific hide logic if needed later
+	// Hide Footer on specific pages (Auth flow)
+	const hiddenRoutes = ["/login", "/signup"];
+	const isHidden = hiddenRoutes.some(
+		(route) => pathname === route || pathname?.startsWith(`${route}/`),
+	);
+
+	if (isHidden) return null;
 
 	const navItems = [
 		{ label: "友達", icon: UserPlus, href: "/friends/search" },
