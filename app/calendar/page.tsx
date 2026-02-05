@@ -423,8 +423,6 @@ export default function CalendarPage() {
 				onClose={handleGachaClose}
 				stamp={newStamp}
 			/>
-
-			<BottomNav />
 		</div>
 	);
 }

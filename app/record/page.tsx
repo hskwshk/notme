@@ -242,7 +242,6 @@ export default function RecordPage() {
 				confirmText="削除する"
 				cancelText="キャンセル"
 			/>
-			<BottomNav />
 		</div>
 	);
 }
