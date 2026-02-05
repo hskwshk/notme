@@ -355,7 +355,7 @@ export default function CalendarPage() {
 											<span className="text-xl font-bold text-slate-400">
 												{i}
 											</span>
-											<div className="w-8 h-8 rounded-full bg-slate-300" />
+											<div className="w-8 h-8 rounded-full" />
 										</div>,
 									);
 								}
