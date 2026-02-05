@@ -1,10 +1,11 @@
 "use client";
 
-import { Clock, Edit, Flame, Trophy, User as UserIcon } from "lucide-react"; // Import icons
+import { Clock, Edit, Flame, Trophy, User as UserIcon, X } from "lucide-react"; // Import icons
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BottomNav } from "@/components/bottom-nav";
+import { UserGraph } from "@/components/home/user-graph";
 import { apiClient } from "@/lib/api-client";
 
 // Types matching API response
@@ -29,9 +30,8 @@ interface ProfileData {
 		monthMaxMinutes: number;
 	};
 	graph: {
-		date: string; // YYYY-MM-DD
+		label: string;
 		minutes: number;
-		isMax: boolean;
 	}[];
 	favoriteStamps: {
 		id: string;
@@ -71,295 +71,260 @@ export default function ProfilePage() {
 		return <div className="p-8 text-center">Failed to load profile</div>;
 	}
 
-	// Graph Logic
-	// Use monthMaxMinutes for scaling, unless current week has a higher value (edge case)
-	// Actually, the requirements say "updated every time max is exceeded".
-	// We'll use the larger of monthMaxMinutes or the local max in graph.
-	const localMax = Math.max(...profile.graph.map((g) => g.minutes));
-	const scaleMax = Math.max(profile.stats.monthMaxMinutes, localMax, 30); // Min scale 30m
-
 	return (
-		<div className="bg-zinc-50 min-h-screen pb-24 relative">
-			{/* Graph Help Modal */}
+		<div className="bg-white min-h-screen pb-24 relative font-sans">
 			{showGraphHelp && (
 				// biome-ignore lint/a11y/useKeyWithClickEvents: Modal backdrop
 				// biome-ignore lint/a11y/noStaticElementInteractions: Modal backdrop
 				<div
-					className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+					className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-6"
 					onClick={() => setShowGraphHelp(false)}
 				>
 					{/* biome-ignore lint/a11y/useKeyWithClickEvents: Modal content */}
 					{/* biome-ignore lint/a11y/noStaticElementInteractions: Modal content */}
 					<div
-						className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl relative"
+						className="bg-white rounded-[32px] p-8 max-w-sm w-full shadow-2xl relative animate-in fade-in zoom-in duration-300"
 						onClick={(e) => e.stopPropagation()}
 					>
-						<h3 className="text-lg font-bold mb-2">グラフについて</h3>
-						<p className="text-sm text-gray-600 leading-relaxed">
-							このグラフの縦軸（max）は、過去30日間で一番運動した日の記録を基準にしています。
-							<br />
-							その日の記録を超えると、新しい基準として更新されます。
-						</p>
+						<div className="flex justify-between items-start mb-4">
+							<div className="bg-[#99D9F8]/20 p-2 rounded-2xl">
+								<Clock className="w-6 h-6 text-[#78C8E8]" />
+							</div>
+							<button
+								type="button"
+								onClick={() => setShowGraphHelp(false)}
+								className="text-gray-300 hover:text-gray-500 transition-colors"
+							>
+								<X className="w-6 h-6" />
+							</button>
+						</div>
+
+						<h3 className="text-xl font-black text-gray-800 mb-3">
+							グラフの読み方
+						</h3>
+						<div className="space-y-4 text-sm text-gray-600 leading-relaxed">
+							<p>このグラフは、直近の運動時間を視覚化したものです。</p>
+							<div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+								<p className="font-bold text-gray-800 mb-1">
+									縦軸（max）について
+								</p>
+								<p>
+									過去30日間で**最も運動した日の記録**を
+									100%として表示しています。
+								</p>
+							</div>
+							<p>
+								自己ベストを更新すると、グラフの基準（max）も自動的に引き上げられます。
+							</p>
+						</div>
+
 						<button
 							type="button"
-							className="mt-4 w-full bg-sky-400 text-white font-bold py-2 rounded-full"
+							className="mt-8 w-full bg-[#99D9F8] hover:bg-[#88C8E8] text-white font-black py-4 rounded-2xl shadow-lg shadow-sky-200 transition-all active:scale-[0.98]"
 							onClick={() => setShowGraphHelp(false)}
 						>
-							閉じる
+							わかった！
 						</button>
 					</div>
 				</div>
 			)}
 
-			{/* Header */}
-			<header className="flex items-center justify-between py-4 px-1">
-				{/* Empty left for spacing/balance if Back button is removed as per req, but user said "left top back button not needed" */}
-				<div className="w-10" />
-				<h1 className="text-lg font-bold text-gray-800">プロフィール</h1>
-				<Link
-					href="/profile/edit"
-					className="flex items-center gap-1 text-sm font-bold text-gray-700"
-				>
-					<Edit className="w-4 h-4" /> 編集
-				</Link>
-			</header>
-
-			{/* User Info Card */}
-			<div className="bg-white rounded-3xl p-6 shadow-sm mb-6 relative overflow-hidden">
-				{/* Blue Border Effect (optional, following image style) */}
-				<div className="absolute top-0 left-0 w-full h-full border-2 border-blue-400/30 rounded-3xl pointer-events-none" />
-
-				{/* Icon */}
-				<div className="relative w-full aspect-square max-w-[200px] mx-auto mb-4 rounded-2xl overflow-hidden bg-gray-200">
-					{profile.user.image ? (
-						<Image
-							src={profile.user.image}
-							alt={profile.user.name}
-							fill
-							className="object-cover"
-							unoptimized
-						/>
-					) : (
-						<div className="w-full h-full flex items-center justify-center bg-gray-100">
-							<UserIcon className="w-16 h-16 text-gray-400" />
-						</div>
-					)}
-				</div>
-
-				{/* Name & ID */}
-				<div className="mb-4">
-					<h2 className="text-xl font-bold text-gray-900">
-						{profile.user.name}
-					</h2>
-					<p className="text-sm text-gray-500 font-medium">
-						@{profile.user.username || "not_me"}
-					</p>
-				</div>
-
-				{/* Counts */}
-				<div className="flex items-center gap-4 text-xs font-bold text-gray-600">
-					<Link href="/friends" className="hover:opacity-70 transition-opacity">
-						<span className="text-black text-sm">
-							{profile.stats.followerCount}
-						</span>{" "}
-						フォロワー
-					</Link>
-					<Link href="/friends" className="hover:opacity-70 transition-opacity">
-						<span className="text-black text-sm">
-							{profile.stats.followingCount}
-						</span>{" "}
-						フォロー
-					</Link>
+			<div className="max-w-md mx-auto px-4">
+				{/* Header */}
+				<header className="flex items-center justify-between py-6">
+					<div className="w-10" />
+					<h1 className="text-2xl font-bold text-gray-500 tracking-tight">
+						profile
+					</h1>
 					<Link
-						href="/friends/requests"
-						className="hover:opacity-70 transition-opacity"
+						href="/profile/edit"
+						className="flex items-center gap-1 text-sm font-bold text-gray-700"
 					>
-						<span className="text-black text-sm">
-							{profile.stats.requestCount}
-						</span>{" "}
-						リクエスト
+						<Edit className="w-4 h-4" /> edit
 					</Link>
-				</div>
-			</div>
+				</header>
 
-			{/* Graph Section */}
-			<div className="bg-sky-400 rounded-3xl p-5 mb-6 text-white relative shadow-md overflow-hidden">
-				<div className="flex justify-between items-start mb-8 text-xs font-bold opacity-80">
-					<span>max</span>
-					<button
-						type="button"
-						onClick={() => setShowGraphHelp(true)}
-						className="p-1 hover:bg-white/10 rounded-full transition-colors"
-					>
-						<span className="block w-4 h-4 border border-white rounded-full flex items-center justify-center text-[10px]">
-							?
-						</span>
-					</button>
-				</div>
-
-				<div className="flex items-end justify-between h-32 gap-2 relative z-10">
-					{profile.graph.map((day) => {
-						// Calculate height percentage
-						const heightPercent = Math.min((day.minutes / scaleMax) * 100, 100);
-						// Label logic: Last one is 31 (date), others roughly?
-						// Requirement: "Rightmost is today". X-axis: dates.
-						// We'll show the day number (e.g. 25, 26...).
-						const dateLabel = new Date(day.date).getDate();
-
-						return (
-							<div
-								key={day.date}
-								className="flex flex-col items-center gap-1 flex-1"
-							>
-								<div className="h-full w-full flex items-end justify-center">
-									<div
-										className={`w-full max-w-[24px] rounded-t-sm transition-all duration-500 ${
-											day.isMax ? "bg-yellow-300" : "bg-gray-400/60"
-										}`}
-										style={{ height: `${Math.max(heightPercent, 5)}%` }} // Min height 5%
-									/>
-								</div>
-								<span className="text-[10px] font-bold">{dateLabel}</span>
+				{/* Profile Content */}
+				<div className="flex flex-col items-center mb-8">
+					<div className="relative w-full aspect-square max-w-[240px] mb-4 rounded-[40px] overflow-hidden bg-gray-100 shadow-md">
+						{profile.user.image ? (
+							<Image
+								src={profile.user.image}
+								alt={profile.user.name}
+								fill
+								className="object-cover"
+								unoptimized
+							/>
+						) : (
+							<div className="w-full h-full flex items-center justify-center">
+								<UserIcon className="w-20 h-20 text-gray-400" />
 							</div>
-						);
-					})}
-				</div>
-				{/* Background lines could go here */}
-				<div className="absolute bottom-6 left-0 w-full h-[1px] bg-white/20" />
-				<span className="absolute bottom-2 right-4 text-[10px] font-bold">
-					day
-				</span>
-			</div>
-
-			{/* Stamp Ranking Section */}
-			<div className="bg-yellow-50 rounded-3xl p-6 mb-6 shadow-sm border border-yellow-100 relative">
-				<h3 className="text-center text-sm font-bold text-gray-800 mb-6">
-					私の好きなスタンプランキング
-				</h3>
-
-				<div className="flex items-end justify-center gap-2 mb-8">
-					{/* 2nd Place */}
-					<div className="flex flex-col items-center w-1/3">
-						<span className="bg-gray-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-full mb-1">
-							2位
-						</span>
-						{profile.favoriteStamps[1] ? (
-							<>
-								<div className="relative w-12 h-12 mb-1 drop-shadow-sm">
-									<Image
-										src={profile.favoriteStamps[1].imageUrl}
-										alt="2nd"
-										fill
-										className="object-contain"
-										unoptimized
-									/>
-								</div>
-								<div className="h-10 w-full bg-gradient-to-b from-gray-300 to-gray-400 rounded-t-lg shadow-inner" />
-							</>
-						) : (
-							<div className="h-10 w-full bg-gray-200 rounded-t-lg opacity-50" />
 						)}
 					</div>
 
-					{/* 1st Place */}
-					<div className="flex flex-col items-center w-1/3 z-10">
-						<span className="bg-yellow-500 text-white text-[10px] font-bold px-3 py-0.5 rounded-full mb-1 shadow-sm">
-							1位
-						</span>
-						{profile.favoriteStamps[0] ? (
-							<>
-								<div className="relative w-16 h-16 mb-1 drop-shadow-md">
-									<Image
-										src={profile.favoriteStamps[0].imageUrl}
-										alt="1st"
-										fill
-										className="object-contain"
-										unoptimized
-									/>
-								</div>
-								<div className="h-16 w-full bg-gradient-to-b from-yellow-300 to-yellow-500 rounded-t-lg shadow-lg relative">
-									{/* Shine effect */}
-									<div className="absolute top-0 right-0 w-full h-full bg-white/20 rounded-t-lg" />
-								</div>
-							</>
-						) : (
-							<div className="h-16 w-full bg-yellow-200 rounded-t-lg opacity-50" />
-						)}
-					</div>
-
-					{/* 3rd Place */}
-					<div className="flex flex-col items-center w-1/3">
-						<span className="bg-orange-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-full mb-1">
-							3位
-						</span>
-						{profile.favoriteStamps[2] ? (
-							<>
-								<div className="relative w-12 h-12 mb-1 drop-shadow-sm">
-									<Image
-										src={profile.favoriteStamps[2].imageUrl}
-										alt="3rd"
-										fill
-										className="object-contain"
-										unoptimized
-									/>
-								</div>
-								<div className="h-8 w-full bg-gradient-to-b from-orange-300 to-orange-400 rounded-t-lg shadow-inner" />
-							</>
-						) : (
-							<div className="h-8 w-full bg-orange-200 rounded-t-lg opacity-50" />
-						)}
+					<div className="text-left w-full max-w-[240px]">
+						<h2 className="text-2xl font-black text-gray-900 mb-1">
+							{profile.user.name}
+						</h2>
+						<p className="text-base font-bold text-gray-800 mb-3">
+							@{profile.user.username || "not_me"}
+						</p>
+						<div className="flex items-center gap-3 text-xs font-bold text-gray-600">
+							<Link href="/friends?tab=followers">
+								<span className="text-black text-sm">
+									{profile.stats.followerCount}
+								</span>{" "}
+								フォロワー
+							</Link>
+							<Link href="/friends?tab=following">
+								<span className="text-black text-sm">
+									{profile.stats.followingCount}
+								</span>{" "}
+								フォロー
+							</Link>
+							<Link href="/friends/requests">
+								<span className="text-black text-sm">
+									{profile.stats.requestCount}
+								</span>{" "}
+								リクエスト
+							</Link>
+						</div>
 					</div>
 				</div>
 
-				<div className="text-center">
+				{/* Graph Section */}
+				<div className="bg-[#99D9F8] rounded-3xl p-5 mb-4 text-white relative shadow-sm overflow-hidden min-h-[180px] flex flex-col">
+					<div className="flex justify-between items-center mb-2">
+						<span className="text-xs font-black tracking-widest opacity-90">
+							max
+						</span>
+						<button
+							type="button"
+							onClick={() => setShowGraphHelp(true)}
+							className="bg-white/20 hover:bg-white/30 p-1.5 rounded-full backdrop-blur-sm transition-all active:scale-90 shadow-inner"
+						>
+							<div className="w-5 h-5 border-2 border-white rounded-full flex items-center justify-center text-[11px] font-black">
+								?
+							</div>
+						</button>
+					</div>
+
+					<div className="flex-1 flex items-end">
+						<UserGraph
+							graphData={profile.graph.map((g) => ({
+								label: g.label,
+								minutes: g.minutes,
+							}))}
+							scaleMax={profile.user.maxMinutes}
+						/>
+					</div>
+					<div className="absolute bottom-2 right-4 text-[10px] font-black opacity-80">
+						day
+					</div>
+				</div>
+
+				{/* Change Stamps Button */}
+				<div className="flex justify-end mb-8">
 					<Link
 						href="/profile/stamps/edit"
-						className="inline-block bg-blue-400/20 text-blue-500 text-xs font-bold px-6 py-2 rounded-full hover:bg-blue-400/30 transition-colors"
+						className="bg-[#AACCFF] text-white text-[10px] font-bold px-4 py-1.5 rounded-full shadow-sm"
 					>
 						スタンプを変更する
 					</Link>
 				</div>
+
+				{/* Stamp Ranking Section */}
+				<div className="mb-10">
+					<h3 className="text-center text-sm font-black text-gray-800 mb-4">
+						お気に入りスタンプ
+					</h3>
+
+					<div className="space-y-2">
+						{[0, 1, 2].map((i) => {
+							const stamp = profile.favoriteStamps[i];
+							const rankLabel = i === 0 ? "1st" : i === 1 ? "2nd" : "3rd";
+							const rankColors =
+								i === 0
+									? "from-[#FF9EAE] to-[#D6B5FF]"
+									: i === 1
+										? "from-[#FFF6A2] to-[#B2E4A9]"
+										: "from-[#99D9F8] to-[#B2E4A9]";
+
+							return (
+								<div
+									key={rankLabel}
+									className="flex items-center gap-3 bg-white rounded-xl py-2 px-3 shadow-[0_2px_10px_rgba(0,0,0,0.05)] border border-gray-50"
+								>
+									<div
+										className={`w-20 h-10 flex items-center justify-center rounded-lg bg-gradient-to-r ${rankColors} text-white font-black italic text-lg shadow-sm`}
+									>
+										{rankLabel}
+									</div>
+									<div className="flex-1 flex items-center gap-4">
+										{stamp ? (
+											<>
+												<div className="relative w-12 h-12">
+													<Image
+														src={stamp.imageUrl}
+														alt={stamp.name}
+														fill
+														className="object-contain"
+														unoptimized
+													/>
+												</div>
+												<span className="text-sm font-bold text-gray-700">
+													{stamp.name}
+												</span>
+											</>
+										) : (
+											<span className="text-xs font-medium text-gray-300">
+												未設定
+											</span>
+										)}
+									</div>
+								</div>
+							);
+						})}
+					</div>
+				</div>
+
+				{/* Footer Stats */}
+				<div className="bg-[#99D9F8] rounded-[28px] p-4 text-white flex justify-between items-center shadow-md border-b-4 border-[#88C8E8]">
+					{/* Max Streak */}
+					<div className="flex flex-col items-center flex-1 border-r border-white/30 px-1">
+						<div className="flex items-center gap-1 mb-1 opacity-90 scale-90">
+							<Flame className="w-3 h-3 text-orange-400 fill-orange-400" />
+							<span className="text-[9px] font-black">最大継続日数</span>
+						</div>
+						<span className="text-base font-black tracking-tight">
+							{profile.user.maxStreak}日
+						</span>
+					</div>
+
+					{/* Total Stamps */}
+					<div className="flex flex-col items-center flex-1 border-r border-white/30 px-1">
+						<div className="flex items-center gap-1 mb-1 opacity-90 scale-90">
+							<Trophy className="w-3 h-3 text-yellow-300" />
+							<span className="text-[9px] font-black">合計スタンプ所持数</span>
+						</div>
+						<span className="text-base font-black tracking-tight">
+							{profile.stats.totalStampCount}個
+						</span>
+					</div>
+
+					{/* Total Duration */}
+					<div className="flex flex-col items-center flex-1 px-1">
+						<div className="flex items-center gap-1 mb-1 opacity-90 scale-90">
+							<Clock className="w-3 h-3 text-white" />
+							<span className="text-[9px] font-black">合計運動時間</span>
+						</div>
+						<span className="text-base font-black tracking-tight">
+							{profile.user.totalDuration}分
+						</span>
+					</div>
+				</div>
 			</div>
 
-			{/* Footer Stats */}
-			<div className="bg-sky-400 rounded-2xl p-4 text-white flex justify-between items-center shadow-lg">
-				{/* Max Streak */}
-				<div className="flex flex-col items-center flex-1 border-r border-white/20">
-					<div className="flex items-center gap-1 mb-1">
-						<Flame className="w-3 h-3 text-orange-400 fill-orange-400" />
-						<span className="text-[10px] font-bold opacity-90">
-							最大継続日数
-						</span>
-					</div>
-					<span className="text-lg font-bold">{profile.user.maxStreak}日</span>
-				</div>
-
-				{/* Total Stamps */}
-				<div className="flex flex-col items-center flex-1 border-r border-white/20">
-					<div className="flex items-center gap-1 mb-1">
-						<Trophy className="w-3 h-3 text-yellow-300" />
-						<span className="text-[10px] font-bold opacity-90">
-							合計スタンプ所持数
-						</span>
-					</div>
-					<span className="text-lg font-bold">
-						{profile.stats.totalStampCount}個
-					</span>
-				</div>
-
-				{/* Total Duration */}
-				<div className="flex flex-col items-center flex-1">
-					<div className="flex items-center gap-1 mb-1">
-						<Clock className="w-3 h-3 text-white" />
-						<span className="text-[10px] font-bold opacity-90">
-							合計運動時間
-						</span>
-					</div>
-					<span className="text-lg font-bold">
-						{profile.user.totalDuration}分
-					</span>
-				</div>
-			</div>
 			<BottomNav />
 		</div>
 	);

@@ -21,7 +21,7 @@ export function UserGraph({
 	const effectiveMax = Math.max(scaleMax, 1);
 
 	return (
-		<div className="flex-1 flex flex-col justify-end relative h-[120px] w-full pt-6">
+		<div className="flex-1 flex flex-col justify-end relative h-[120px] w-full">
 			{/* Y-axis line (max value) */}
 			<div className="absolute top-0 left-0 w-full border-t border-white/30 text-[10px] text-white/70">
 				<span className="absolute -top-4 left-0">{effectiveMax}min</span>

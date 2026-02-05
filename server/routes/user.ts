@@ -68,24 +68,18 @@ const app = new Hono<HonoEnv>()
 			// Check friendship status
 			// foundUserIds was unused, removed.
 
-			const friendships = await db.query.friendship.findMany({
-				where: or(
-					and(eq(friendship.userId, user.id)),
-					and(eq(friendship.friendId, user.id)),
-				),
+			// Check friendship status: Am I following them? Have I sent a request?
+			const followingStatus = await db.query.friendship.findMany({
+				where: and(eq(friendship.userId, user.id)),
 			});
 
 			// Map status
 			const usersWithStatus = filteredUsers.map((u) => {
-				const rel = friendships.find(
-					(f) =>
-						(f.userId === user.id && f.friendId === u.id) ||
-						(f.userId === u.id && f.friendId === user.id),
-				);
+				const rel = followingStatus.find((f) => f.friendId === u.id);
 				return {
 					...u,
 					friendshipStatus: rel ? rel.status : "none", // 'pending' or 'accepted' or 'none'
-					isSender: rel ? rel.userId === user.id : false, // To distinguish if I sent the request
+					isSender: rel ? rel.userId === user.id : false,
 				};
 			});
 
@@ -114,18 +108,18 @@ const app = new Hono<HonoEnv>()
 			return c.json({ error: "User not found" }, 404);
 		}
 
-		// Check existing friendship
+		// Check existing friendship FROM ME TO THEM
 		const existingFriendship = await db.query.friendship.findFirst({
-			where: or(
-				and(eq(friendship.userId, user.id), eq(friendship.friendId, friendId)),
-				and(eq(friendship.userId, friendId), eq(friendship.friendId, user.id)),
+			where: and(
+				eq(friendship.userId, user.id),
+				eq(friendship.friendId, friendId),
 			),
 		});
 
 		if (existingFriendship) {
 			return c.json(
 				{
-					error: "Friendship already exists or pending",
+					error: "You are already following or requested to follow this user",
 					status: existingFriendship.status,
 				},
 				400,
@@ -235,61 +229,89 @@ const app = new Hono<HonoEnv>()
 
 		return c.json({ success: true });
 	})
-	.delete("/:id/friend", async (c) => {
-		const db = c.get("db");
-		const user = c.get("user");
-		const friendId = c.req.param("id");
+	.delete(
+		"/:id/friend",
+		zValidator(
+			"query",
+			z.object({
+				type: z.enum(["follower", "following"]).optional(),
+			}),
+		),
+		async (c) => {
+			const db = c.get("db");
+			const user = c.get("user");
+			const targetId = c.req.param("id");
+			const { type = "following" } = c.req.valid("query");
 
-		if (!user) return c.json({ error: "Unauthorized" }, 401);
+			if (!user) return c.json({ error: "Unauthorized" }, 401);
 
-		// Find and delete accepted friendship
-		const existingFriendship = await db.query.friendship.findFirst({
-			where: and(
-				or(
-					and(
-						eq(friendship.userId, user.id),
-						eq(friendship.friendId, friendId),
-					),
-					and(
-						eq(friendship.userId, friendId),
-						eq(friendship.friendId, user.id),
-					),
-				),
-				eq(friendship.status, "accepted"),
-			),
-		});
+			if (type === "following") {
+				// I stop following them
+				await db
+					.delete(friendship)
+					.where(
+						and(
+							eq(friendship.userId, user.id),
+							eq(friendship.friendId, targetId),
+							eq(friendship.status, "accepted"),
+						),
+					);
+			} else {
+				// I remove them from my followers
+				await db
+					.delete(friendship)
+					.where(
+						and(
+							eq(friendship.userId, targetId),
+							eq(friendship.friendId, user.id),
+							eq(friendship.status, "accepted"),
+						),
+					);
+			}
 
-		if (!existingFriendship) {
-			return c.json({ error: "Friendship not found" }, 404);
-		}
-
-		await db.delete(friendship).where(eq(friendship.id, existingFriendship.id));
-
-		return c.json({ success: true });
-	})
+			return c.json({ success: true });
+		},
+	)
 	.get("/me/friends", async (c) => {
 		const db = c.get("db");
 		const user = c.get("user");
 
 		if (!user) return c.json({ error: "Unauthorized" }, 401);
 
-		const friendsRecords = await db.query.friendship.findMany({
+		const followingRecords = await db.query.friendship.findMany({
 			where: and(
-				or(eq(friendship.userId, user.id), eq(friendship.friendId, user.id)),
+				eq(friendship.userId, user.id),
 				eq(friendship.status, "accepted"),
 			),
-			with: {
-				user: true, // sender
-				friend: true, // recipient
-			},
+			with: { friend: true },
 		});
 
-		const friends = friendsRecords.map((f) => {
-			if (f.userId === user.id) {
-				return { ...f.friend, role: "following" as const };
-			}
-			return { ...f.user, role: "follower" as const };
+		const followerRecords = await db.query.friendship.findMany({
+			where: and(
+				eq(friendship.friendId, user.id),
+				eq(friendship.status, "accepted"),
+			),
+			with: { user: true },
 		});
+
+		const friends = [
+			...followingRecords.map((f) => ({
+				id: f.friend.id,
+				name: f.friend.name,
+				username: f.friend.username,
+				image: f.friend.image,
+				currentStreak: f.friend.currentStreak,
+				role: "following" as const,
+			})),
+			...followerRecords.map((f) => ({
+				id: f.user.id,
+				name: f.user.name,
+				username: f.user.username,
+				image: f.user.image,
+				currentStreak: f.user.currentStreak,
+				role: "follower" as const,
+			})),
+		];
 
 		return c.json({ friends });
 	})
@@ -350,13 +372,19 @@ const app = new Hono<HonoEnv>()
 			.orderBy(userStamp.favoriteOrder);
 
 		// 3. Graph Data (Last 7 days) & Month Max (Last 30 days for scaling)
-		const today = new Date();
-		const thirtyDaysAgo = new Date();
-		thirtyDaysAgo.setDate(today.getDate() - 30);
-		const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split("T")[0];
+		const getJstDate = (d: Date) => {
+			return d
+				.toLocaleDateString("ja-JP", {
+					year: "numeric",
+					month: "2-digit",
+					day: "2-digit",
+				})
+				.replaceAll("/", "-");
+		};
 
-		const sevenDaysAgo = new Date();
-		sevenDaysAgo.setDate(today.getDate() - 6);
+		const thirtyDaysAgo = new Date();
+		thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+		const thirtyDaysAgoStr = getJstDate(thirtyDaysAgo);
 
 		// Fetch logs for last 30 days to get max
 		const logs = await db
@@ -377,31 +405,21 @@ const app = new Hono<HonoEnv>()
 
 		// Initialize 7 days array
 		const graph = [];
-		// Max within the 7 days (to highlight the bar)
-		let maxInWeek = 0;
 
-		for (let i = 0; i < 7; i++) {
-			const d = new Date(sevenDaysAgo);
-			d.setDate(d.getDate() + i);
-			// Format as YYYY-MM-DD to match DB
-			const dateStr = d.toISOString().split("T")[0];
+		for (let i = 6; i >= 0; i--) {
+			const d = new Date();
+			d.setDate(d.getDate() - i);
+			const dateStr = getJstDate(d);
+			const dayNum = d.getDate();
 
 			const log = logs.find((l) => l.date === dateStr);
 			const minutes = log ? log.durationMinutes : 0;
 
-			if (minutes > maxInWeek) maxInWeek = minutes;
-
 			graph.push({
-				date: dateStr,
+				label: dayNum.toString(),
 				minutes,
 			});
 		}
-
-		// Add isMax flag (if 0, no max)
-		const graphWithMax = graph.map((g) => ({
-			...g,
-			isMax: maxInWeek > 0 && g.minutes === maxInWeek,
-		}));
 
 		return c.json({
 			user: {
@@ -424,7 +442,7 @@ const app = new Hono<HonoEnv>()
 				totalStampCount: Number(totalStamps?.count || 0),
 				monthMaxMinutes: monthMaxMinutes,
 			},
-			graph: graphWithMax,
+			graph: graph,
 			favoriteStamps: favoriteStamps,
 		});
 	})
