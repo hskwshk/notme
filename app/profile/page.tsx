@@ -72,7 +72,7 @@ export default function ProfilePage() {
 	}
 
 	return (
-		<div className="bg-white min-h-screen pb-24 relative font-sans">
+		<div className="pb-[40px] relative font-sans">
 			{showGraphHelp && (
 				// biome-ignore lint/a11y/useKeyWithClickEvents: Modal backdrop
 				// biome-ignore lint/a11y/noStaticElementInteractions: Modal backdrop
