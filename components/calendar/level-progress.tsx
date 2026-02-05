@@ -56,12 +56,12 @@ export function LevelProgress({
 					onClick={onGachaClick}
 					disabled={!isLevelUpReady}
 					className={`
-						group relative flex items-center justify-center size-[62px] rounded-full border-4 border-yellow-300
+						group relative flex items-center justify-center size-[62px] rounded-full border-4 border-[#FFFB92]
 						transition-all duration-300
 						${
 							isLevelUpReady
-								? "bg-yellow-500 hover:scale-105 animate-pulse cursor-pointer shadow-yellow-500/50"
-								: "bg-yellow-500/50 cursor-not-allowed grayscale-[0.5]"
+								? "bg-[#D1F4FF] hover:scale-105 animate-pulse cursor-pointer"
+								: "bg-[#D1F4FF] cursor-not-allowed"
 						}
 					`}
 				>
@@ -72,8 +72,8 @@ export function LevelProgress({
 
 					{/* 報酬アイコン */}
 					<Gift
-						className={`h-8 w-8 text-white ${isLevelUpReady ? "animate-bounce" : ""}`}
-						strokeWidth={2.5}
+						className={`h-8 w-8 text-black ${isLevelUpReady ? "animate-bounce" : ""}`}
+						strokeWidth={1.5}
 					/>
 				</button>
 			</div>
