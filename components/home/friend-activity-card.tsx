@@ -36,6 +36,8 @@ export interface FriendData {
 	} | null;
 }
 
+import { UserGraph } from "./user-graph";
+
 interface FriendActivityCardProps {
 	friend: FriendData;
 }
@@ -45,18 +47,13 @@ export function FriendActivityCard({ friend }: FriendActivityCardProps) {
 	const gradientClass =
 		"bg-gradient-to-br from-sky-400 via-cyan-300 to-teal-200";
 
-	// Find simple max for graph scaling
-	const maxValue = Math.max(
-		...friend.stats.graphData.map((d) => d.minutes),
-		60,
-	);
-
 	// State for menu
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 
 	const handleUnfollow = async () => {
 		if (!confirm(`${friend.user.name}さんを友達から削除しますか？`)) return;
 
+		// @ts-expect-error: RPC type instantiation depth issue
 		const res = await apiClient.api.users[":id"].friend.$delete({
 			param: { id: friend.user.id },
 		});
@@ -163,25 +160,11 @@ export function FriendActivityCard({ friend }: FriendActivityCardProps) {
 				{/* Content: Graph + Text Stats */}
 				<div className="flex gap-4 mb-6">
 					{/* Graph Area */}
-					<div className="flex-1 flex items-end justify-between gap-1 h-24 pb-1">
-						{friend.stats.graphData.map((point, i) => {
-							const heightPercent = Math.min(
-								(point.minutes / maxValue) * 100,
-								100,
-							);
-							const isToday = i === friend.stats.graphData.length - 1;
-							return (
-								<div
-									key={point.label || i}
-									className="flex flex-col items-center gap-1 w-1/4"
-								>
-									<div
-										className={`w-full rounded-t-sm transition-all duration-500 ${isToday ? "bg-yellow-300" : "bg-white/30"}`}
-										style={{ height: `${Math.max(heightPercent, 10)}%` }} // Min height
-									/>
-								</div>
-							);
-						})}
+					<div className="flex-1 max-w-[55%]">
+						<UserGraph
+							graphData={friend.stats.graphData}
+							scaleMax={friend.stats.maxExerciseMinutes}
+						/>
 					</div>
 
 					{/* Stats Text */}
