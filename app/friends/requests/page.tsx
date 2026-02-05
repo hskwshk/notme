@@ -4,6 +4,7 @@ import { Check, ChevronLeft, User, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Top } from "@/components/top";
 import { apiClient } from "@/lib/api-client";
 
 interface Request {
@@ -69,14 +70,15 @@ export default function FriendRequestsPage() {
 	};
 
 	return (
-		<div className="bg-zinc-50 min-h-screen pb-24">
+		<div className="min-h-screen pb-24">
 			{/* Header */}
-			<header className="flex items-center px-4 py-4 bg-white sticky top-0 z-10 shadow-sm">
+			<Top name="フォローリクエスト" backType="previous" />
+			{/* <header className="flex items-center px-4 py-4 bg-white sticky top-0 z-10 shadow-sm">
 				<Link href="/profile" className="p-2 -ml-2 text-gray-600">
 					<ChevronLeft className="w-6 h-6" />
 				</Link>
 				<h1 className="text-lg font-bold text-gray-800 ml-2">リクエスト一覧</h1>
-			</header>
+			</header> */}
 
 			<div className="p-4">
 				{isLoading ? (
