@@ -111,7 +111,7 @@ export default function RecordPage() {
 	);
 
 	return (
-		<div className="min-h-screen bg-pink-50 max-w-md mx-auto">
+		<div className="min-h-screen max-w-md mx-auto">
 			{/* Header */}
 			{/* <header className="relative flex items-center justify-center pt-8 pb-4 px-4">
 				<h1 className="text-xl font-medium text-gray-700">今日の記録</h1>
