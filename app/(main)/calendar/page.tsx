@@ -44,6 +44,7 @@ interface CalendarData {
 export default function CalendarPage() {
 	const [data, setData] = useState<CalendarData | null>(null);
 	const [currentDate, setCurrentDate] = useState(new Date());
+	const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
 
 	// Gacha State
 	const [isGachaOpen, setIsGachaOpen] = useState(false);
@@ -148,34 +149,111 @@ export default function CalendarPage() {
 		);
 
 	return (
-		<div className="bg-[#F2F2F7] font-sans text-slate-900">
+		<div className="bg-[#F2F2F7] font-sans text-slate-900 pb-[50px]">
 			{/* ヘッダー（月 / 継続記録） */}
 			<div className="pb-[10px] flex items-center justify-between">
-				<div className="flex items-center gap-1">
-					<span className="text-[20px] font-bold tracking-tight ml-[15px]">
-						{getMonthName(data.month)}
-						{/* <span className="text-[20px]">月</span> */}
-					</span>
-					<ChevronRight className="rotate-90 h-5 w-5 text-gray-400 mt-1" />
+				<div className="flex items-center gap-1 relative">
+					<button
+						type="button"
+						onClick={() => setIsMonthPickerOpen(!isMonthPickerOpen)}
+						className="flex items-center gap-1 hover:bg-gray-100 px-2 py-1 rounded-lg transition"
+					>
+						<span className="text-[20px] font-bold tracking-tight">
+							{getMonthName(data.month)}
+						</span>
+						<ChevronRight
+							className={`h-5 w-5 text-gray-400 transition-transform ${
+								isMonthPickerOpen ? "rotate-270" : "rotate-90"
+							}`}
+						/>
+					</button>
+
+					{/* 月選択ドロップダウン */}
+					{isMonthPickerOpen && (
+						<div className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-lg p-4 z-50 w-[300px]">
+							{/* 年選択 */}
+							<div className="mb-4">
+								<div className="block text-sm font-bold mb-2">年</div>
+								<select
+									value={currentDate.getFullYear()}
+									onChange={(e) => {
+										const newYear = Number.parseInt(e.target.value, 10);
+										setCurrentDate(
+											new Date(newYear, currentDate.getMonth(), 1),
+										);
+									}}
+									className="w-full border rounded-lg px-3 py-2"
+								>
+									{Array.from({ length: 10 }, (_, i) => {
+										const today = new Date();
+										const year = today.getFullYear() - i;
+										return (
+											<option key={year} value={year}>
+												{year}年
+											</option>
+										);
+									})}
+								</select>
+							</div>
+
+							{/* 月選択 */}
+							<div className="mb-4">
+								<div className="block text-sm font-bold mb-2">月</div>
+								<div className="grid grid-cols-4 gap-2">
+									{Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
+										const today = new Date();
+										const selectedYear = currentDate.getFullYear();
+										const selectedMonth = month - 1;
+
+										const isFuture =
+											selectedYear > today.getFullYear() ||
+											(selectedYear === today.getFullYear() &&
+												selectedMonth > today.getMonth());
+
+										return (
+											<button
+												key={month}
+												type="button"
+												onClick={() => {
+													if (!isFuture) {
+														setCurrentDate(
+															new Date(selectedYear, selectedMonth, 1),
+														);
+														setIsMonthPickerOpen(false);
+													}
+												}}
+												disabled={isFuture}
+												className={`py-2 rounded-lg font-bold transition ${
+													currentDate.getMonth() === month - 1
+														? "bg-blue-500 text-white"
+														: isFuture
+															? "bg-gray-50 text-gray-300 cursor-not-allowed"
+															: "bg-gray-100 hover:bg-gray-200"
+												}`}
+											>
+												{month}月
+											</button>
+										);
+									})}
+								</div>
+							</div>
+
+							<button
+								type="button"
+								onClick={() => setIsMonthPickerOpen(false)}
+								className="w-full bg-gray-200 hover:bg-gray-300 py-2 rounded-lg font-bold transition"
+							>
+								閉じる
+							</button>
+						</div>
+					)}
 				</div>
 
 				<div className="flex items-center gap-2">
-					{/* {data.currentStreak > 0 && (
-						<div className="bg-sky-400 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm">
-							<span className="text-orange-300 text-sm">🔥</span>{" "}
-							{data.currentStreak}日継続中
-						</div>
-					)} */}
-					{/* テスト用継続日数 */}
+					{/* 継続日数バッジ */}
 					<div className="bg-gradient-to-b from-[#83C7EF] to-[#9DD7DF] text-white px-3 py-1.5 rounded-[10px] font-bold flex items-center gap-1 shadow-sm">
 						<span className="text-orange-300 text-sm">
-							<Image
-								src="/sample/fire.png"
-								alt="炎"
-								width={15}
-								height={15}
-								// style={{ width: "auto", height: "auto" }}
-							/>
+							<Image src="/sample/fire.png" alt="炎" width={15} height={15} />
 						</span>{" "}
 						{data.currentStreak}日継続中
 					</div>
