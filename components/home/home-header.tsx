@@ -22,10 +22,13 @@ export function HomeHeader({ hasUnreadNotifications }: HomeHeaderProps) {
 			{/* 左側スペース確保（中央揃えのため） */}
 			<div className="w-10"></div>
 			<h1 className="text-[24px] text-center flex-1">ホーム</h1>
-			<Link href="/notice" className="w-[40px] h-[40px] relative block">
-				<Bell className="size-full text-gray-900" />
+			<Link
+				href="/notice"
+				className="w-[40px] h-[40px] relative flex items-center justify-center"
+			>
+				<Bell className="size-8 text-slate-800" />
 				{hasUnreadNotifications && (
-					<span className="absolute top-0 right-1 block h-3 w-3 rounded-full bg-red-500 ring-2 ring-white" />
+					<span className="absolute top-1 right-1 block size-3 rounded-full bg-red-500 border-2 border-white" />
 				)}
 			</Link>
 		</header>
