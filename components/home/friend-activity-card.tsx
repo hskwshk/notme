@@ -29,7 +29,6 @@ export interface FriendData {
 		maxStreak: number;
 		todayExerciseMinutes: number;
 		maxExerciseMinutes: number;
-		monthMaxMinutes: number;
 		graphData: GraphPoint[];
 	};
 	quote: {
@@ -54,6 +53,7 @@ export function FriendActivityCard({ friend }: FriendActivityCardProps) {
 	const handleUnfollow = async () => {
 		if (!confirm(`${friend.user.name}さんを友達から削除しますか？`)) return;
 
+		// @ts-expect-error: RPC type instantiation depth issue
 		const res = await apiClient.api.users[":id"].friend.$delete({
 			param: { id: friend.user.id },
 		});

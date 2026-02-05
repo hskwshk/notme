@@ -26,7 +26,6 @@ export function StatsCard({
 	maxStreak,
 	todayMinutes,
 	maxMinutes,
-	monthMaxMinutes,
 	graphData,
 	quote,
 }: StatsCardProps) {

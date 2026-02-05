@@ -46,6 +46,7 @@ describe("/routes/calendar", () => {
 		const app = new Hono<HonoEnv>()
 			.use(async (c, next) => {
 				c.set("db", db);
+				// @ts-expect-error: Mock user type mismatch
 				c.set("user", testUser);
 				await next();
 			})
