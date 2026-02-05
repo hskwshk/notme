@@ -138,7 +138,7 @@ export default function SignupPage() {
 		!validatePassword(password);
 
 	return (
-		<main className="min-h-screen bg-[#FFE4E4] pb-20 relative font-sans">
+		<main className="min-h-screen pb-20 relative font-sans">
 			{/* Header */}
 			<header className="fixed top-0 left-0 right-0 z-10 flex h-[60px] items-center justify-between px-4">
 				<Link
