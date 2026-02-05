@@ -123,7 +123,7 @@ export default function FriendsPage() {
 			</div>
 
 			{/* Search Bar */}
-			<div className="px-6 mb-6">
+			<div className="mb-6">
 				<div className="relative">
 					<input
 						type="text"
@@ -137,7 +137,7 @@ export default function FriendsPage() {
 			</div>
 
 			{/* List Content */}
-			<div className="px-6 space-y-3">
+			<div className="space-y-3">
 				{isLoading ? (
 					<div className="text-center py-10 text-gray-400 text-sm">
 						読み込み中...
