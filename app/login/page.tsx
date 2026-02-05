@@ -72,7 +72,7 @@ export default function LoginPage() {
 	};
 
 	return (
-		<div className={styles.container}>
+		<main className={styles.container}>
 			<div className={styles.statusBar}>{/* Signal icons would go here */}</div>
 
 			<Image
@@ -159,6 +159,6 @@ export default function LoginPage() {
 			</div>
 			{/* Display error message outside/below card or absolute positioned as designed */}
 			{error && <div className={styles.errorMessage}>{error}</div>}
-		</div>
+		</main>
 	);
 }
