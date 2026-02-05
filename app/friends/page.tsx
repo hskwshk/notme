@@ -2,9 +2,10 @@
 
 import { ChevronLeft, Search, User } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
+// import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { Top } from "@/components/top";
 import { apiClient } from "@/lib/api-client";
 
 interface Friend {
@@ -84,14 +85,16 @@ export default function FriendsPage() {
 	return (
 		<div className="min-h-screen pb-24 font-sans">
 			{/* Header */}
-			<header className="flex items-center px-4 py-6">
+			<Top name={`@${friends[0]?.username || "not_me"}`} backType="previous" />
+
+			{/* <header className="flex items-center py-6">
 				<Link href="/profile" className="text-gray-400">
 					<ChevronLeft className="w-6 h-6" />
 				</Link>
 				<h1 className="flex-1 text-center font-bold text-gray-500 text-lg mr-6">
 					@{friends[0]?.username || "not_me"}
 				</h1>
-			</header>
+			</header> */}
 
 			{/* Tabs */}
 			<div className="flex px-8 mb-6 border-b border-gray-100">
