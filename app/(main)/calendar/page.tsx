@@ -293,7 +293,7 @@ export default function CalendarPage() {
 										<span className="text-[20px] font-bold text-slate-400">
 											{dayNum}
 										</span>
-										<div className="w-8 h-8 rounded-full bg-slate-300" />
+										<div className="w-8 h-8 rounded-full" />
 									</div>,
 								);
 							}
@@ -323,8 +323,8 @@ export default function CalendarPage() {
 											{d}
 										</span>
 
-										{/* スタンプ用丸 */}
-										<div className="w-8 h-8 rounded-full bg-slate-300 absolute top-8" />
+										{/* スタンプ用丸（透明だが場所は確保） */}
+										<div className="w-8 h-8 rounded-full absolute top-8" />
 
 										{/* スタンプオーバーレイ */}
 										{dayData?.stamp?.imageUrl && (
