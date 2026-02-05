@@ -19,7 +19,7 @@ export function UserGraph({ graphData, scaleMax }: UserGraphProps) {
 	return (
 		<div className="flex-1 flex flex-col justify-end relative h-[120px] w-full">
 			{/* Y-axis line (max value) */}
-			<div className="absolute top-0 left-0 w-full border-t border-white/30 text-[10px] text-white/70">
+			<div className="absolute top-0 left-0 w-full border-t border-slate-200 text-[10px] text-slate-400">
 				<span className="absolute -top-4 left-0">{effectiveMax}min</span>
 			</div>
 
@@ -39,8 +39,8 @@ export function UserGraph({ graphData, scaleMax }: UserGraphProps) {
 							<div className="w-full h-full flex items-end justify-center relative group">
 								<div
 									className={`w-3 sm:w-4 rounded-t-sm transition-all duration-500 ${
-										isToday ? "bg-yellow-300" : "bg-white/50"
-									} ${point.minutes === 0 ? "opacity-20" : "opacity-100"}`}
+										isToday ? "bg-yellow-300" : "bg-slate-200"
+									} ${point.minutes === 0 ? "opacity-30" : "opacity-100"}`}
 									style={{
 										height: `${heightPercent}%`,
 										minHeight: point.minutes > 0 ? "2px" : "0px",
@@ -48,12 +48,12 @@ export function UserGraph({ graphData, scaleMax }: UserGraphProps) {
 								/>
 								{/* Tooltip for minutes */}
 								{point.minutes > 0 && (
-									<div className="absolute -top-6 text-[10px] font-bold bg-black/50 px-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+									<div className="absolute -top-6 text-[10px] font-bold bg-slate-800 text-white px-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
 										{point.minutes}分
 									</div>
 								)}
 							</div>
-							<span className="text-[8px] sm:text-[9px] opacity-80 whitespace-nowrap overflow-visible text-center leading-tight">
+							<span className="text-[8px] sm:text-[9px] text-slate-500 font-bold whitespace-nowrap overflow-visible text-center leading-tight">
 								{point.label}
 							</span>
 						</div>
