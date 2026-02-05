@@ -148,12 +148,12 @@ export default function CalendarPage() {
 		);
 
 	return (
-		<div className="min-h-screen bg-[#F2F2F7] pb-32 font-sans text-slate-900">
+		<div className="bg-[#F2F2F7] font-sans text-slate-900">
 			{/* ヘッダー（月 / 継続記録） */}
 			<div className="pb-[10px] flex items-center justify-between">
 				<div className="flex items-center gap-1">
 					<span className="text-[20px] font-bold tracking-tight ml-[15px]">
-						{data.month}
+						{getMonthName(data.month)}
 						{/* <span className="text-[20px]">月</span> */}
 					</span>
 					<ChevronRight className="rotate-90 h-5 w-5 text-gray-400 mt-1" />
@@ -383,5 +383,24 @@ export default function CalendarPage() {
 	);
 }
 
-// Helper for days of week
-const DAYS_OF_WEEK = ["日", "月", "火", "水", "木", "金", "土"];
+// 月名を取得する関数（完全表記）
+const getMonthName = (month: number) => {
+	const monthNames = [
+		"January",
+		"February",
+		"March",
+		"April",
+		"May",
+		"June",
+		"July",
+		"August",
+		"September",
+		"October",
+		"November",
+		"December",
+	];
+	return monthNames[month - 1];
+};
+
+// 曜日表記の定義
+const DAYS_OF_WEEK = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
