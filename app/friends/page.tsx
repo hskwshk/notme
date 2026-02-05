@@ -82,7 +82,7 @@ export default function FriendsPage() {
 	};
 
 	return (
-		<div className="bg-[#FFF4F6] min-h-screen pb-24 font-sans">
+		<div className="min-h-screen pb-24 font-sans">
 			{/* Header */}
 			<header className="flex items-center px-4 py-6">
 				<Link href="/profile" className="text-gray-400">
