@@ -190,6 +190,7 @@ export default function FriendSearchPage() {
 			} else if (isUnfriending) {
 				const res = await apiClient.api.users[":id"].friend.$delete({
 					param: { id: user.id },
+					query: { type: "following" },
 				});
 				if (!res.ok) throw new Error("Failed to unfriend");
 			} else {

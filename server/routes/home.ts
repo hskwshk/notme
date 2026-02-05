@@ -168,104 +168,114 @@ const homeRoute = new Hono<HonoEnv>()
 				shouldShow: shouldShowStampModal,
 				stamp: stampData,
 			},
-			friends: await Promise.all(
-				(
-					await db
-						.select()
-						.from(friendship)
-						.where(
-							and(
-								or(
-									eq(friendship.userId, user.id),
-									eq(friendship.friendId, user.id),
-								),
-								eq(friendship.status, "accepted"),
+			friends: await (async () => {
+				const friendshipsData = await db
+					.select()
+					.from(friendship)
+					.where(
+						and(
+							or(
+								eq(friendship.userId, user.id),
+								eq(friendship.friendId, user.id),
 							),
-						)
-				).map(async (f) => {
-					const friendUserId = f.userId === user.id ? f.friendId : f.userId;
-					const friendProfile = await db.query.user.findFirst({
-						where: eq(userTable.id, friendUserId),
-						columns: {
-							name: true,
-							image: true,
-							characterName: true,
-							level: true,
-							currentStreak: true,
-							maxStreak: true,
-							maxMinutes: true,
-						},
-					});
-
-					if (!friendProfile) return null;
-
-					const friendTodayLog = await db.query.activityLog.findFirst({
-						where: and(
-							eq(activityLog.userId, friendUserId),
-							eq(activityLog.date, today),
+							eq(friendship.status, "accepted"),
 						),
-					});
-
-					const friendRecentLogs = await db
-						.select()
-						.from(activityLog)
-						.where(
-							and(
-								eq(activityLog.userId, friendUserId),
-								gte(activityLog.date, thirtyDaysAgoStr),
-							),
-						);
-
-					const friendMonthMaxMinutes = friendRecentLogs.reduce(
-						(max, log) =>
-							log.durationMinutes > max ? log.durationMinutes : max,
-						0,
 					);
 
-					const friendGraphData = [];
-					for (let i = 4; i >= 0; i--) {
-						const d = new Date();
-						d.setDate(d.getDate() - i);
-						const dateStr = getJstDate(d);
-						const month = d.getMonth() + 1;
-						const day = d.getDate();
-						const dayOfWeek = ["日", "月", "火", "水", "木", "金", "土"][
-							d.getDay()
-						];
+				// Get unique user IDs of friends
+				const uniqueFriendIds = Array.from(
+					new Set(
+						friendshipsData.map((f) =>
+							f.userId === user.id ? f.friendId : f.userId,
+						),
+					),
+				);
 
-						let label = "";
-						if (i === 0) label = "今日";
-						else if (i === 1) label = "昨日";
-						else label = `${month}/${day}(${dayOfWeek})`;
-
-						const log = friendRecentLogs.find((l) => l.date === dateStr);
-						friendGraphData.push({
-							label,
-							minutes: log?.durationMinutes || 0,
-							type: "daily",
+				return Promise.all(
+					uniqueFriendIds.map(async (friendUserId) => {
+						const friendProfile = await db.query.user.findFirst({
+							where: eq(userTable.id, friendUserId),
+							columns: {
+								name: true,
+								image: true,
+								characterName: true,
+								level: true,
+								currentStreak: true,
+								maxStreak: true,
+								maxMinutes: true,
+							},
 						});
-					}
 
-					return {
-						user: {
-							id: friendUserId,
-							name: friendProfile.name,
-							image: friendProfile.image,
-							characterName: friendProfile.characterName,
-							level: friendProfile.level,
-						},
-						stats: {
-							currentStreak: friendProfile.currentStreak,
-							maxStreak: friendProfile.maxStreak,
-							todayExerciseMinutes: friendTodayLog?.durationMinutes || 0,
-							maxExerciseMinutes: friendProfile.maxMinutes,
-							monthMaxMinutes: friendMonthMaxMinutes,
-							graphData: friendGraphData,
-						},
-						quote: quote ? { text: quote.content } : null,
-					};
-				}),
-			).then((list) => list.filter((f) => f !== null)),
+						if (!friendProfile) return null;
+
+						const friendTodayLog = await db.query.activityLog.findFirst({
+							where: and(
+								eq(activityLog.userId, friendUserId),
+								eq(activityLog.date, today),
+							),
+						});
+
+						const friendRecentLogs = await db
+							.select()
+							.from(activityLog)
+							.where(
+								and(
+									eq(activityLog.userId, friendUserId),
+									gte(activityLog.date, thirtyDaysAgoStr),
+								),
+							);
+
+						const friendMonthMaxMinutes = friendRecentLogs.reduce(
+							(max, log) =>
+								log.durationMinutes > max ? log.durationMinutes : max,
+							0,
+						);
+
+						const friendGraphData = [];
+						for (let i = 4; i >= 0; i--) {
+							const d = new Date();
+							d.setDate(d.getDate() - i);
+							const dateStr = getJstDate(d);
+							const month = d.getMonth() + 1;
+							const day = d.getDate();
+							const dayOfWeek = ["日", "月", "火", "水", "木", "金", "土"][
+								d.getDay()
+							];
+
+							let label = "";
+							if (i === 0) label = "今日";
+							else if (i === 1) label = "昨日";
+							else label = `${month}/${day}(${dayOfWeek})`;
+
+							const log = friendRecentLogs.find((l) => l.date === dateStr);
+							friendGraphData.push({
+								label,
+								minutes: log?.durationMinutes || 0,
+								type: "daily",
+							});
+						}
+
+						return {
+							user: {
+								id: friendUserId,
+								name: friendProfile.name,
+								image: friendProfile.image,
+								characterName: friendProfile.characterName,
+								level: friendProfile.level,
+							},
+							stats: {
+								currentStreak: friendProfile.currentStreak,
+								maxStreak: friendProfile.maxStreak,
+								todayExerciseMinutes: friendTodayLog?.durationMinutes || 0,
+								maxExerciseMinutes: friendProfile.maxMinutes,
+								monthMaxMinutes: friendMonthMaxMinutes,
+								graphData: friendGraphData,
+							},
+							quote: quote ? { text: quote.content } : null,
+						};
+					}),
+				).then((list) => list.filter((f) => f !== null));
+			})(),
 		});
 	})
 	.post("/stamp-seen", async (c) => {

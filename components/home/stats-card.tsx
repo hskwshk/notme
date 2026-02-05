@@ -26,7 +26,6 @@ export function StatsCard({
 	maxStreak,
 	todayMinutes,
 	maxMinutes,
-	monthMaxMinutes,
 	graphData,
 	quote,
 }: StatsCardProps) {
@@ -72,7 +71,7 @@ export function StatsCard({
 				<div className="flex-1 max-w-[55%]">
 					<UserGraph
 						graphData={graphData}
-						scaleMax={maxMinutes}
+						scaleMax={maxMinutes} // 以前のご要望通り自己ベストを100%とする
 						isPrimary={true}
 					/>
 				</div>

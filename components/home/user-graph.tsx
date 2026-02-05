@@ -11,12 +11,8 @@ interface UserGraphProps {
 	isPrimary?: boolean;
 }
 
-export function UserGraph({
-	graphData,
-	scaleMax,
-	isPrimary = false,
-}: UserGraphProps) {
-	// Y-axis scale max (monthly max)
+export function UserGraph({ graphData, scaleMax }: UserGraphProps) {
+	// Y-axis scale max (all-time max minutes)
 	// Use Math.max(scaleMax, 1) to avoid division by zero
 	const effectiveMax = Math.max(scaleMax, 1);
 
