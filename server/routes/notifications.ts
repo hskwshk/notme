@@ -1,6 +1,8 @@
 import { zValidator } from "@hono/zod-validator";
+import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 
+import { appNotification, friendship } from "@/db/schema";
 import {
 	createGetPushSubscriptionStatus,
 	createRegisterPushSubscription,
@@ -19,6 +21,39 @@ const endpointQuerySchema = z.object({
 });
 
 const app = createHonoApp()
+	.get("/", async (c) => {
+		const { user } = await getUserOrThrow(c);
+		const db = c.get("db");
+
+		// 1. Fetch Incoming Follow Requests
+		const followRequests = await db.query.friendship.findMany({
+			where: and(
+				eq(friendship.friendId, user.id),
+				eq(friendship.status, "pending"),
+			),
+			with: {
+				user: {
+					columns: {
+						id: true,
+						name: true,
+						image: true,
+					},
+				},
+			},
+			orderBy: desc(friendship.createdAt),
+		});
+
+		// 2. Fetch General Notifications
+		const generalNotifications = await db.query.appNotification.findMany({
+			where: eq(appNotification.userId, user.id),
+			orderBy: desc(appNotification.createdAt),
+		});
+
+		return c.json({
+			followRequests,
+			generalNotifications,
+		});
+	})
 	.post(
 		"/subscriptions",
 		zValidator("json", PushSubscription.schema),
