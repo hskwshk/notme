@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { Top } from "@/components/top";
 import { apiClient } from "@/lib/api-client";
 import { authClient } from "@/lib/auth-client";
 import { passwordSchema, usernameSchema } from "@/server/objects/user";
@@ -193,7 +194,8 @@ export default function ProfileEditPage() {
 	return (
 		<main className="min-h-screen bg-[#F4F4F5] pb-20 relative">
 			{/* Header */}
-			<header className="fixed top-0 left-0 right-0 z-10 flex h-[60px] items-center justify-between bg-[#F4F4F5] px-4">
+			<Top name="プロフィールを編集" backType="previous" />
+			{/* <header className="fixed top-0 left-0 right-0 z-10 flex h-[60px] items-center justify-between bg-[#F4F4F5] px-4">
 				<Link
 					href="/profile"
 					className="flex h-10 w-10 items-center justify-center"
@@ -202,9 +204,9 @@ export default function ProfileEditPage() {
 				</Link>
 				<h1 className="text-lg font-bold text-gray-900">プロフィールを編集</h1>
 				<div className="w-10"></div>
-			</header>
+			</header> */}
 
-			<div className="pt-[80px] px-6 flex flex-col items-center">
+			<div className="px-6 flex flex-col items-center">
 				{/* Image Section */}
 				<div className="relative mb-4">
 					<div className="h-[120px] w-[120px] overflow-hidden rounded-full border-2 border-white shadow-sm bg-gray-200">
