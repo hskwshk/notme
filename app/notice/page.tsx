@@ -1,6 +1,5 @@
 "use client";
 
-import { BottomNav } from "@/components/bottom-nav";
 import { Card } from "@/components/notice-card";
 import { Top } from "@/components/top";
 
@@ -61,36 +60,28 @@ export default function Notice() {
 	console.log("Notice Data:", noticesByDate);
 
 	return (
-		<>
-			<main>
-				<Top name={pageName} />
+		<main>
+			<Top name={pageName} />
 
-				<div className="flex flex-col items-center">
-					{noticesByDate.map((group) => (
-						<section key={group.date}>
-							<h2 className="mb-[23px] text-[20px] font-bold text-black">
-								{group.date}
-							</h2>
-							<div>
-								{group.notices.map((notice) => (
-									<Card
-										key={notice.id}
-										title={notice.title}
-										description={notice.description}
-										isUnread={notice.isUnread}
-									/>
-								))}
-							</div>
-						</section>
-					))}
-				</div>
-
-				<BottomNav />
-			</main>
-			{/* <div>
-				<h1>{pageName}</h1>
-				<p>Check console for data.</p>
-			</div> */}
-		</>
+			<div className="flex flex-col items-center">
+				{noticesByDate.map((group) => (
+					<section key={group.date}>
+						<h2 className="mb-[23px] text-[20px] font-bold text-black">
+							{group.date}
+						</h2>
+						<div>
+							{group.notices.map((notice) => (
+								<Card
+									key={notice.id}
+									title={notice.title}
+									description={notice.description}
+									isUnread={notice.isUnread}
+								/>
+							))}
+						</div>
+					</section>
+				))}
+			</div>
+		</main>
 	);
 }
