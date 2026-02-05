@@ -112,7 +112,7 @@ export default function Home() {
 	};
 
 	return (
-		<div className="min-h-screen bg-white pb-24 font-sans text-slate-900">
+		<div className="min-h-screen pb-24 font-sans text-slate-900">
 			{/* Daily Goal Modal Manager */}
 			<DailyGoalManager />
 

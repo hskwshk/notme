@@ -18,7 +18,7 @@ export function HomeHeader({ hasUnreadNotifications }: HomeHeaderProps) {
 		// 	</div>
 		// </header>
 
-		<header className="flex items-center justify-between h-[100px] px-4 text-[#676767]">
+		<header className="flex items-center justify-between h-[60px] text-[#676767] pb-[30px]">
 			{/* 左側スペース確保（中央揃えのため） */}
 			<div className="w-10"></div>
 			<h1 className="text-[24px] text-center flex-1">ホーム</h1>
