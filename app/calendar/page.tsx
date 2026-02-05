@@ -44,6 +44,7 @@ interface CalendarData {
 export default function CalendarPage() {
 	const [data, setData] = useState<CalendarData | null>(null);
 	const [currentDate, setCurrentDate] = useState(new Date());
+	const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
 
 	// Gacha State
 	const [isGachaOpen, setIsGachaOpen] = useState(false);
@@ -100,18 +101,6 @@ export default function CalendarPage() {
 		// For now, let's just use it.
 	}, [currentDate, triggerGacha]);
 
-	// const handlePrevMonth = () => {
-	// 	setCurrentDate(
-	// 		new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1),
-	// 	);
-	// };
-
-	// const handleNextMonth = () => {
-	// 	setCurrentDate(
-	// 		new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1),
-	// 	);
-	// };
-
 	const handleGachaDraw = async () => {
 		if (!data?.isLevelUpReady) return;
 
@@ -148,63 +137,120 @@ export default function CalendarPage() {
 		);
 
 	return (
-		<div className="font-sans text-slate-900">
+		<div className="bg-[#F2F2F7] font-sans text-slate-900 pb-[50px]">
 			{/* ヘッダー（月 / 継続記録） */}
-			<div className="pt-8 pb-[20px] flex items-center justify-between">
-				<div className="flex items-center gap-1">
-					<span className="text-[36px] font-bold tracking-tight">
-						{data.month}
-						<span className="text-[20px]">月</span>
-					</span>
-					<ChevronRight className="rotate-90 h-5 w-5 text-gray-400 mt-1" />
+			<div className="pb-[10px] flex items-center justify-between">
+				<div className="flex items-center gap-1 relative">
+					<button
+						type="button"
+						onClick={() => setIsMonthPickerOpen(!isMonthPickerOpen)}
+						className="flex items-center gap-1 hover:bg-gray-100 px-2 py-1 rounded-lg transition"
+					>
+						<span className="text-[20px] font-bold tracking-tight">
+							{getMonthName(data.month)}
+						</span>
+						<ChevronRight
+							className={`h-5 w-5 text-gray-400 transition-transform ${
+								isMonthPickerOpen ? "rotate-270" : "rotate-90"
+							}`}
+						/>
+					</button>
+
+					{/* 月選択ドロップダウン */}
+					{isMonthPickerOpen && (
+						<div className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-lg p-4 z-50 w-[300px]">
+							{/* 年選択 */}
+							<div className="mb-4">
+								<div className="block text-sm font-bold mb-2">年</div>
+								<select
+									value={currentDate.getFullYear()}
+									onChange={(e) => {
+										const newYear = Number.parseInt(e.target.value, 10);
+										setCurrentDate(
+											new Date(newYear, currentDate.getMonth(), 1),
+										);
+									}}
+									className="w-full border rounded-lg px-3 py-2"
+								>
+									{Array.from({ length: 10 }, (_, i) => {
+										const today = new Date();
+										const year = today.getFullYear() - i;
+										return (
+											<option key={year} value={year}>
+												{year}年
+											</option>
+										);
+									})}
+								</select>
+							</div>
+
+							{/* 月選択 */}
+							<div className="mb-4">
+								<div className="block text-sm font-bold mb-2">月</div>
+								<div className="grid grid-cols-4 gap-2">
+									{Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
+										const today = new Date();
+										const selectedYear = currentDate.getFullYear();
+										const selectedMonth = month - 1;
+
+										const isFuture =
+											selectedYear > today.getFullYear() ||
+											(selectedYear === today.getFullYear() &&
+												selectedMonth > today.getMonth());
+
+										return (
+											<button
+												key={month}
+												type="button"
+												onClick={() => {
+													if (!isFuture) {
+														setCurrentDate(
+															new Date(selectedYear, selectedMonth, 1),
+														);
+														setIsMonthPickerOpen(false);
+													}
+												}}
+												disabled={isFuture}
+												className={`py-2 rounded-lg font-bold transition ${
+													currentDate.getMonth() === month - 1
+														? "bg-blue-500 text-white"
+														: isFuture
+															? "bg-gray-50 text-gray-300 cursor-not-allowed"
+															: "bg-gray-100 hover:bg-gray-200"
+												}`}
+											>
+												{month}月
+											</button>
+										);
+									})}
+								</div>
+							</div>
+
+							<button
+								type="button"
+								onClick={() => setIsMonthPickerOpen(false)}
+								className="w-full bg-gray-200 hover:bg-gray-300 py-2 rounded-lg font-bold transition"
+							>
+								閉じる
+							</button>
+						</div>
+					)}
 				</div>
 
 				<div className="flex items-center gap-2">
-					{/* {data.currentStreak > 0 && (
-						<div className="bg-sky-400 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm">
-							<span className="text-orange-300 text-sm">🔥</span>{" "}
-							{data.currentStreak}日継続中
-						</div>
-					)} */}
-					{/* テスト用継続日数 */}
-					<div className="bg-sky-400 text-white px-3 py-1.5 rounded-[10px] font-bold flex items-center gap-1 shadow-sm">
+					{/* 継続日数バッジ */}
+					<div className="bg-gradient-to-b from-[#83C7EF] to-[#9DD7DF] text-white px-3 py-1.5 rounded-[10px] font-bold flex items-center gap-1 shadow-sm">
 						<span className="text-orange-300 text-sm">
-							<Image
-								src="/sample/fire.png"
-								alt="炎"
-								width={15}
-								height={15}
-								style={{ width: "auto", height: "auto" }}
-							/>
+							<Image src="/sample/fire.png" alt="炎" width={15} height={15} />
 						</span>{" "}
 						{data.currentStreak}日継続中
 					</div>
 				</div>
 			</div>
 
-			{/* Month Navigation (Invisible or swipe, but adding buttons for usability now) */}
-			{/* Ideally swipe, but adding simple arrows for now */}
-			{/* 横移動ボタン */}
-			{/* <div className="flex justify-end gap-4 mb-4">
-				<button
-					type="button"
-					onClick={handlePrevMonth}
-					className="p-2 bg-white rounded-full shadow-sm"
-				>
-					<ChevronLeft className="h-4 w-4" />
-				</button>
-				<button
-					type="button"
-					onClick={handleNextMonth}
-					className="p-2 bg-white rounded-full shadow-sm"
-				>
-					<ChevronRight className="h-4 w-4" />
-				</button>
-			</div> */}
-
 			{/* カレンダー */}
 			<div>
-				<div className="border-1 border-slate-800 rounded-[15px] py-4 px-1 bg-[#F1FAFF] relative overflow-hidden shadow-sm">
+				<div className="border-1 border-slate-800 rounded-[15px] py-4 px-1 bg-white relative overflow-hidden shadow-sm">
 					{/* 曜日 */}
 					<div className="grid grid-cols-7 mb-4">
 						{DAYS_OF_WEEK.map((day, i) => (
@@ -247,7 +293,7 @@ export default function CalendarPage() {
 										<span className="text-[20px] font-bold text-slate-400">
 											{dayNum}
 										</span>
-										<div className="w-8 h-8 rounded-full bg-slate-300" />
+										<div className="w-8 h-8 rounded-full" />
 									</div>,
 								);
 							}
@@ -272,15 +318,15 @@ export default function CalendarPage() {
 										key={`curr-${d}`}
 										className="flex flex-col items-center justify-start gap-1 h-16 relative group"
 									>
-										{/* Day Number */}
+										{/* 日付 */}
 										<span className={`text-xl font-bold ${dayLabelColor} z-10`}>
 											{d}
 										</span>
 
-										{/* Circle Placeholder */}
-										<div className="w-8 h-8 rounded-full bg-slate-300 absolute top-8" />
+										{/* スタンプ用丸（透明だが場所は確保） */}
+										<div className="w-8 h-8 rounded-full absolute top-8" />
 
-										{/* Stamp Overlay */}
+										{/* スタンプオーバーレイ */}
 										{dayData?.stamp?.imageUrl && (
 											<div className="absolute top-4 w-14 h-14 z-20 transform -rotate-6 hover:scale-110 transition-transform">
 												<Image
@@ -309,7 +355,7 @@ export default function CalendarPage() {
 											<span className="text-xl font-bold text-slate-400">
 												{i}
 											</span>
-											<div className="w-8 h-8 rounded-full bg-slate-300" />
+											<div className="w-8 h-8 rounded-full" />
 										</div>,
 									);
 								}
@@ -331,7 +377,7 @@ export default function CalendarPage() {
 				/>
 
 				{/* 統計カード */}
-				<div className="bg-gradient-to-r from-sky-400 to-cyan-300 text-white rounded-[15px] p-2 shadow-md flex justify-between items-center text-center">
+				<div className="bg-gradient-to-b from-[#83C7EF] to-[#9DD7DF] text-white rounded-[15px] p-2 shadow-md flex justify-between items-center text-center">
 					<div className="flex-1">
 						<div className="text-[12px] font-bold opacity-90 mb-1 flex items-center justify-center gap-1">
 							<span className="text-orange-300">
@@ -340,7 +386,7 @@ export default function CalendarPage() {
 									alt="炎"
 									width={15}
 									height={15}
-									style={{ width: "auto", height: "auto" }}
+									// style={{ width: "auto", height: "auto" }}
 								/>
 							</span>{" "}
 							最大継続日数
@@ -383,5 +429,24 @@ export default function CalendarPage() {
 	);
 }
 
-// Helper for days of week
-const DAYS_OF_WEEK = ["日", "月", "火", "水", "木", "金", "土"];
+// 月名を取得する関数（完全表記）
+const getMonthName = (month: number) => {
+	const monthNames = [
+		"January",
+		"February",
+		"March",
+		"April",
+		"May",
+		"June",
+		"July",
+		"August",
+		"September",
+		"October",
+		"November",
+		"December",
+	];
+	return monthNames[month - 1];
+};
+
+// 曜日表記の定義
+const DAYS_OF_WEEK = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
